@@ -142,7 +142,7 @@ The Combo Engine uses multiple methods:
 
 ## License
 
-[Your License Information Here]
+Distributed under the MIT License. See LICENSE for more information.
 
 ## Author
 
