@@ -1,0 +1,10 @@
+PyQt6
+pypandoc_binary
+pandas
+openpyxl
+markdown
+beautifulsoup4
+lxml
+numpy
+md-to-excel-converter
+pytablewriter
