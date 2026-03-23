@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MermaidSelectorDialog</class>
+ <widget class="QDialog" name="MermaidSelectorDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>700</width>
+    <height>500</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Select Mermaid Diagram</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">
+    QDialog {
+        background-color: #2d2d2d;
+    }
+   </string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="spacing">
+    <number>10</number>
+   </property>
+   <property name="leftMargin">
+    <number>10</number>
+   </property>
+   <property name="topMargin">
+    <number>10</number>
+   </property>
+   <property name="rightMargin">
+    <number>10</number>
+   </property>
+   <property name="bottomMargin">
+    <number>10</number>
+   </property>
+   
+   <!-- Info Header -->
+   <item>
+    <widget class="QLabel" name="infoLabel">
+     <property name="text">
+      <string>Loading diagrams...</string>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>10</pointsize>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">
+       QLabel {
+           color: #ffffff;
+           padding: 5px;
+           background-color: #3a3a3a;
+           border-radius: 4px;
+       }
+      </string>
+     </property>
+    </widget>
+   </item>
+   
+   <!-- Splitter for list and preview -->
+   <item>
+    <widget class="QSplitter" name="splitter">
+     <property name="orientation">
+      <enum>Qt::Orientation::Horizontal</enum>
+     </property>
+     <widget class="QWidget" name="leftWidget">
+      <layout class="QVBoxLayout" name="leftLayout">
+       <item>
+        <widget class="QListWidget" name="diagramList">
+         <property name="styleSheet">
+          <string notr="true">
+           QListWidget {
+               background-color: #1e1e1e;
+               color: #d4d4d4;
+               border: 1px solid #3a3a3a;
+               border-radius: 4px;
+               outline: none;
+           }
+           QListWidget::item {
+               padding: 8px;
+               border-bottom: 1px solid #3a3a3a;
+           }
+           QListWidget::item:selected {
+               background-color: #0d6efd;
+               color: white;
+           }
+           QListWidget::item:hover {
+               background-color: #3a3a3a;
+           }
+          </string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="rightWidget">
+      <layout class="QVBoxLayout" name="rightLayout">
+       <item>
+        <widget class="QGroupBox" name="previewGroup">
+         <property name="title">
+          <string>Preview</string>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">
+           QGroupBox {
+               color: #ffffff;
+               border: 1px solid #3a3a3a;
+               margin-top: 1ex;
+           }
+           QGroupBox::title {
+               subcontrol-origin: margin;
+               left: 10px;
+               padding: 0 5px 0 5px;
+           }
+          </string>
+         </property>
+         <layout class="QVBoxLayout" name="previewGroupLayout">
+          <item>
+           <widget class="QTextEdit" name="previewTextEdit">
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+            <property name="font">
+             <font>
+              <family>Consolas</family>
+              <pointsize>10</pointsize>
+             </font>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">
+              QTextEdit {
+                  background-color: #2d2d2d;
+                  color: #d4d4d4;
+                  border: 1px solid #3a3a3a;
+                  font-family: Consolas, Monaco, monospace;
+              }
+             </string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="statsGroup">
+         <property name="title">
+          <string>Statistics</string>
+         </property>
+         <layout class="QHBoxLayout" name="statsLayout">
+          <item>
+           <widget class="QLabel" name="typeStatLabel">
+            <property name="text">
+             <string>Type:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="typeStatValue">
+            <property name="text">
+             <string>-</string>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: #0d6efd;</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="linesStatLabel">
+            <property name="text">
+             <string>Lines:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="linesStatValue">
+            <property name="text">
+             <string>-</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="charsStatLabel">
+            <property name="text">
+             <string>Chars:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="charsStatValue">
+            <property name="text">
+             <string>-</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="statsSpacer">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+   
+   <!-- Buttons -->
+   <item>
+    <layout class="QHBoxLayout" name="buttonLayout">
+     <item>
+      <widget class="QPushButton" name="viewBtn">
+       <property name="text">
+        <string>👁️ View Selected</string>
+       </property>
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="minimumWidth">
+        <number>120</number>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">
+         QPushButton {
+             background-color: #0d6efd;
+             color: white;
+             padding: 8px;
+             border-radius: 4px;
+         }
+         QPushButton:hover {
+             background-color: #0b5ed7;
+         }
+         QPushButton:disabled {
+             background-color: #6c757d;
+         }
+        </string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="viewAllBtn">
+       <property name="text">
+        <string>📂 View All (New Windows)</string>
+       </property>
+       <property name="minimumWidth">
+        <number>150</number>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="extractAllBtn">
+       <property name="text">
+        <string>💾 Extract All</string>
+       </property>
+       <property name="minimumWidth">
+        <number>120</number>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="buttonSpacer">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="closeBtn">
+       <property name="text">
+        <string>Close</string>
+       </property>
+       <property name="minimumWidth">
+        <number>100</number>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
