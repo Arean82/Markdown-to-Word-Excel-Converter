@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>900</width>
+    <height>750</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Markdown/Mermaid Converter</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <property name="spacing">
+     <number>10</number>
+    </property>
+    <property name="leftMargin">
+     <number>15</number>
+    </property>
+    <property name="topMargin">
+     <number>15</number>
+    </property>
+    <property name="rightMargin">
+     <number>15</number>
+    </property>
+    <property name="bottomMargin">
+     <number>15</number>
+    </property>
+    <item>
+     <widget class="QLabel" name="titleLabel">
+      <property name="font">
+       <font>
+        <pointsize>18</pointsize>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>📄 Markdown &amp; Mermaid Converter</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="fileLayout" stretch="2,6,2">
+      <item>
+       <widget class="QPushButton" name="selectFileBtn">
+        <property name="text">
+         <string>📂 Select File</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="fileLabel">
+        <property name="styleSheet">
+         <string>padding: 8px; border: 1px solid #3c3c3c; border-radius: 4px;</string>
+        </property>
+        <property name="text">
+         <string>No file selected</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="previewBtn">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>👁️ Preview</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <widget class="QLabel" name="fileTypeLabel">
+      <property name="styleSheet">
+       <string>color: #888; font-style: italic;</string>
+      </property>
+      <property name="text">
+       <string>📄 File type: Not selected</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QGroupBox" name="previewGroup">
+      <property name="title">
+       <string>Preview</string>
+      </property>
+      <layout class="QVBoxLayout" name="previewLayout">
+       <item>
+        <widget class="QTextEdit" name="previewText">
+         <property name="font">
+          <font>
+           <family>Consolas</family>
+           <pointsize>10</pointsize>
+          </font>
+         </property>
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QGroupBox" name="mdGroup">
+      <property name="title">
+       <string>📝 Markdown Conversion</string>
+      </property>
+      <layout class="QVBoxLayout" name="mdLayout">
+       <item>
+        <layout class="QHBoxLayout" name="conversionLayout">
+         <item>
+          <widget class="QRadioButton" name="wordRadio">
+           <property name="text">
+            <string>Word (.docx)</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QRadioButton" name="excelRadio">
+           <property name="text">
+            <string>Excel (.xlsx)</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="highlightCheck">
+           <property name="text">
+            <string>🎨 Syntax highlighting (Word only)</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="rightSpacer">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="convertBtn">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>12</pointsize>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string>QPushButton { background-color: #28a745; border-radius: 4px; padding: 10px 30px; } QPushButton:hover { background-color: #218838; } QPushButton:disabled { background-color: #6c757d; }</string>
+           </property>
+           <property name="text">
+            <string>🚀 Convert to Word/Excel</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QLabel" name="outputLabel">
+         <property name="styleSheet">
+          <string>color: #888; font-style: italic;</string>
+         </property>
+         <property name="text">
+          <string>💾 Output saved in same folder as input file</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QGroupBox" name="mermaidGroup">
+      <property name="title">
+       <string>🎨 Mermaid Export</string>
+      </property>
+      <layout class="QVBoxLayout" name="mermaidLayout">
+       <item>
+        <layout class="QHBoxLayout" name="exportLayout">
+         <item>
+          <widget class="QLabel" name="formatLabel">
+           <property name="text">
+            <string>Export as:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QRadioButton" name="pngRadio">
+           <property name="text">
+            <string>PNG</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QRadioButton" name="svgRadio">
+           <property name="text">
+            <string>SVG</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QRadioButton" name="pdfRadio">
+           <property name="text">
+            <string>PDF</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="exportSpacer">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="exportDiagramBtn">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>12</pointsize>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string>QPushButton { background-color: #0d6efd; border-radius: 4px; padding: 10px 30px; } QPushButton:hover { background-color: #0b5ed7; } QPushButton:disabled { background-color: #6c757d; }</string>
+           </property>
+           <property name="text">
+            <string>💾 Export Diagram</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QProgressBar" name="progressBar">
+      <property name="visible">
+       <bool>false</bool>
+      </property>
+      <property name="value">
+       <number>0</number>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="statusLabel">
+      <property name="text">
+       <string>Ready</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="recentLabel">
+      <property name="styleSheet">
+       <string>color: #28a745;</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

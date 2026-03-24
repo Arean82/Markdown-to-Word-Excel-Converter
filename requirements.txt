@@ -1,0 +1,14 @@
+PyQt6>=6.4.0
+markdown>=3.4.0
+pypandoc_binary>=1.11
+pandas>=1.5.0
+openpyxl>=3.0.0
+beautifulsoup4>=4.11.0
+lxml>=4.9.0
+numpy>=1.24.0
+pytablewriter>=0.64.0
+pygments>=2.14.0
+playwright==1.46.0
+mermaid-py>=0.1.0
+pyppeteer>=2.0.0
+pyee==11.1.0
