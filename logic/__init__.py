@@ -1,1 +1,0 @@
-from logic.converter_thread import ConversionWorker
