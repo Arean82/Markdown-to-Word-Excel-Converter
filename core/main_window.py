@@ -134,7 +134,7 @@ class MainWindow(QMainWindow):
             self,
             "Select File",
             "",
-            "Supported Files (*.md *.markdown *.mermaid);;Markdown Files (*.md *.markdown);;Mermaid Files (*.mermaid);;All Files (*)"
+            "Supported Files (*.md *.markdown *.mermaid *.mmd);;Markdown Files (*.md *.markdown);;Mermaid Files (*.mermaid *.mmd);;All Files (*)"
         )
         
         if not file_path:
