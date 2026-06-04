@@ -86,6 +86,10 @@ class MainWindow(QMainWindow):
         self.previewBtn.clicked.connect(self.show_preview_dialog)
         self.convertBtn.clicked.connect(self.convert_file)
         self.exportDiagramBtn.clicked.connect(self.export_diagram)
+        self.wordRadio.toggled.connect(self.toggle_word_settings)
+        
+        # Initial state for Word settings
+        self.toggle_word_settings(self.wordRadio.isChecked())
         
         self.logger.info("Application started")
     
@@ -230,6 +234,9 @@ class MainWindow(QMainWindow):
         input_path = Path(self.current_file)
         output_file = str(input_path.with_suffix(output_ext))
         use_highlighting = self.highlightCheck.isChecked()
+        paper_size = self.paperSizeCombo.currentText() if hasattr(self, 'paperSizeCombo') else "A4"
+        orientation = self.orientationCombo.currentText() if hasattr(self, 'orientationCombo') else "Portrait"
+        margin = self.marginCombo.currentText() if hasattr(self, 'marginCombo') else "Normal"
         
         self.set_ui_enabled(False)
         self.progressBar.setVisible(True)
@@ -240,7 +247,10 @@ class MainWindow(QMainWindow):
             self.current_file,
             output_file,
             conv_type,
-            use_highlighting
+            use_highlighting,
+            paper_size,
+            orientation,
+            margin
         )
         self.worker.progress.connect(self.update_progress)
         self.worker.status.connect(self.update_status)
@@ -255,10 +265,33 @@ class MainWindow(QMainWindow):
         self.previewBtn.setEnabled(enabled and self.current_file is not None)
         self.wordRadio.setEnabled(enabled)
         self.excelRadio.setEnabled(enabled)
-        self.highlightCheck.setEnabled(enabled)
+        
+        word_selected = self.wordRadio.isChecked()
+        word_settings_enabled = enabled and word_selected
+        self.highlightCheck.setEnabled(word_settings_enabled)
+        
+        if hasattr(self, 'paperSizeCombo'):
+            self.paperSizeCombo.setEnabled(word_settings_enabled)
+            self.orientationCombo.setEnabled(word_settings_enabled)
+            self.marginCombo.setEnabled(word_settings_enabled)
+            self.paperLabel.setEnabled(word_settings_enabled)
+            self.orientationLabel.setEnabled(word_settings_enabled)
+            self.marginLabel.setEnabled(word_settings_enabled)
+            
         self.convertBtn.setEnabled(enabled and self.current_file is not None)
         if hasattr(self, 'exportDiagramBtn'):
             self.exportDiagramBtn.setEnabled(enabled and self.current_file_type == 'mermaid')
+            
+    def toggle_word_settings(self, checked: bool):
+        """Toggle Word specific settings"""
+        self.highlightCheck.setEnabled(checked)
+        if hasattr(self, 'paperSizeCombo'):
+            self.paperSizeCombo.setEnabled(checked)
+            self.orientationCombo.setEnabled(checked)
+            self.marginCombo.setEnabled(checked)
+            self.paperLabel.setEnabled(checked)
+            self.orientationLabel.setEnabled(checked)
+            self.marginLabel.setEnabled(checked)
     
     def update_progress(self, value: int):
         """Update progress bar"""

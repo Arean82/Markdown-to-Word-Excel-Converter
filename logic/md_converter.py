@@ -17,12 +17,15 @@ class ConversionWorker(QThread):
     status = pyqtSignal(str)
     finished = pyqtSignal(bool, str)
     
-    def __init__(self, input_file: str, output_file: str, conversion_type: str, use_highlighting: bool = True):
+    def __init__(self, input_file: str, output_file: str, conversion_type: str, use_highlighting: bool = True, paper_size: str = "A4", orientation: str = "Portrait", margin: str = "Normal"):
         super().__init__()
         self.input_file = input_file
         self.output_file = output_file
         self.conversion_type = conversion_type
         self.use_highlighting = use_highlighting
+        self.paper_size = paper_size
+        self.orientation = orientation
+        self.margin = margin
         self.logger = Logger()
     
     def run(self):
@@ -63,16 +66,77 @@ class ConversionWorker(QThread):
             with open(temp_md, 'w', encoding='utf-8') as f:
                 f.write(content)
             
-            # Convert the temporary file
-            pypandoc.convert_file(
-                str(temp_md),
-                'docx',
-                outputfile=self.output_file,
-                extra_args=['--standalone']
-            )
+            try:
+                extra_args = ['--standalone']
+                if not self.use_highlighting:
+                    extra_args.append('--no-highlight')
+                    
+                # Convert the temporary file
+                pypandoc.convert_file(
+                    str(temp_md),
+                    'docx',
+                    outputfile=self.output_file,
+                    extra_args=extra_args
+                )
+            finally:
+                # Clean up temp file
+                if os.path.exists(temp_md):
+                    os.unlink(str(temp_md))
             
-            # Clean up temp file
-            os.unlink(str(temp_md))
+            self.status.emit("Applying page formatting...")
+            self.progress.emit(80)
+            
+            try:
+                import docx
+                from docx.shared import Inches, Mm
+                from docx.enum.section import WD_ORIENT
+                
+                doc = docx.Document(self.output_file)
+                for section in doc.sections:
+                    # Apply Paper Size
+                    if self.paper_size == "A4":
+                        page_width = Mm(210)
+                        page_height = Mm(297)
+                    elif self.paper_size == "Legal":
+                        page_width = Inches(8.5)
+                        page_height = Inches(14)
+                    else: # Letter
+                        page_width = Inches(8.5)
+                        page_height = Inches(11)
+                    
+                    # Apply Orientation
+                    if self.orientation == "Landscape":
+                        section.orientation = WD_ORIENT.LANDSCAPE
+                        section.page_width = page_height
+                        section.page_height = page_width
+                    else:
+                        section.orientation = WD_ORIENT.PORTRAIT
+                        section.page_width = page_width
+                        section.page_height = page_height
+                    
+                    # Apply Margins
+                    if self.margin == "Narrow":
+                        m = Inches(0.5)
+                        section.top_margin = m
+                        section.bottom_margin = m
+                        section.left_margin = m
+                        section.right_margin = m
+                    elif self.margin == "Wide":
+                        section.top_margin = Inches(1)
+                        section.bottom_margin = Inches(1)
+                        section.left_margin = Inches(2)
+                        section.right_margin = Inches(2)
+                    else: # Normal
+                        section.top_margin = Inches(1)
+                        section.bottom_margin = Inches(1)
+                        section.left_margin = Inches(1)
+                        section.right_margin = Inches(1)
+                        
+                doc.save(self.output_file)
+            except ImportError:
+                self.logger.warning("python-docx not installed, skipping page formatting")
+            except Exception as format_err:
+                self.logger.warning(f"Error applying page formatting: {format_err}")
             
             self.progress.emit(100)
             status = "with syntax highlighting" if self.use_highlighting else ""

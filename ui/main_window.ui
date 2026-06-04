@@ -179,6 +179,83 @@
         </layout>
        </item>
        <item>
+        <layout class="QHBoxLayout" name="wordSettingsLayout">
+         <item>
+          <widget class="QLabel" name="paperLabel">
+           <property name="text">
+            <string>Paper:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="paperSizeCombo">
+           <item>
+            <property name="text">
+             <string>A4</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Letter</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Legal</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="orientationLabel">
+           <property name="text">
+            <string>Orientation:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="orientationCombo">
+           <item>
+            <property name="text">
+             <string>Portrait</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Landscape</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="marginLabel">
+           <property name="text">
+            <string>Margin:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="marginCombo">
+           <item>
+            <property name="text">
+             <string>Normal</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Narrow</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Wide</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
         <widget class="QLabel" name="outputLabel">
          <property name="styleSheet">
           <string>color: #888; font-style: italic;</string>
