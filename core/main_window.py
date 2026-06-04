@@ -34,6 +34,10 @@ class MainWindow(QMainWindow):
         ui_path = Path(__file__).parent.parent / 'ui' / 'main_window.ui'
         loadUi(str(ui_path), self)
         
+        # Set UI Size
+        self.resize(800, 600)
+        self.setMinimumSize(600, 500)
+        
         # Initialize logger
         self.logger = Logger()
         
@@ -87,9 +91,11 @@ class MainWindow(QMainWindow):
         self.convertBtn.clicked.connect(self.convert_file)
         self.exportDiagramBtn.clicked.connect(self.export_diagram)
         self.wordRadio.toggled.connect(self.toggle_word_settings)
+        if hasattr(self, 'pdfMarkdownRadio'):
+            self.pdfMarkdownRadio.toggled.connect(self.toggle_word_settings)
         
         # Initial state for Word settings
-        self.toggle_word_settings(self.wordRadio.isChecked())
+        self.toggle_word_settings()
         
         self.logger.info("Application started")
     
@@ -219,6 +225,9 @@ class MainWindow(QMainWindow):
         if self.wordRadio.isChecked():
             output_ext = ".docx"
             conv_type = "Word"
+        elif hasattr(self, 'pdfMarkdownRadio') and self.pdfMarkdownRadio.isChecked():
+            output_ext = ".pdf"
+            conv_type = "PDF"
         else:
             output_ext = ".xlsx"
             conv_type = "Excel"
@@ -227,7 +236,7 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(
                 self, 
                 "Warning", 
-                "Only markdown files (.md, .markdown) can be converted to Word/Excel.\nMermaid files are for diagram viewing only."
+                "Only markdown files (.md, .markdown) can be converted to Word/Excel/PDF.\nMermaid files are for diagram viewing only."
             )
             return
         
@@ -265,9 +274,11 @@ class MainWindow(QMainWindow):
         self.previewBtn.setEnabled(enabled and self.current_file is not None)
         self.wordRadio.setEnabled(enabled)
         self.excelRadio.setEnabled(enabled)
+        if hasattr(self, 'pdfMarkdownRadio'):
+            self.pdfMarkdownRadio.setEnabled(enabled)
         
-        word_selected = self.wordRadio.isChecked()
-        word_settings_enabled = enabled and word_selected
+        format_selected = self.wordRadio.isChecked() or (hasattr(self, 'pdfMarkdownRadio') and self.pdfMarkdownRadio.isChecked())
+        word_settings_enabled = enabled and format_selected
         self.highlightCheck.setEnabled(word_settings_enabled)
         
         if hasattr(self, 'paperSizeCombo'):
@@ -282,16 +293,17 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'exportDiagramBtn'):
             self.exportDiagramBtn.setEnabled(enabled and self.current_file_type == 'mermaid')
             
-    def toggle_word_settings(self, checked: bool):
-        """Toggle Word specific settings"""
-        self.highlightCheck.setEnabled(checked)
+    def toggle_word_settings(self, checked: bool = False):
+        """Toggle Word/PDF specific settings"""
+        format_selected = self.wordRadio.isChecked() or (hasattr(self, 'pdfMarkdownRadio') and self.pdfMarkdownRadio.isChecked())
+        self.highlightCheck.setEnabled(format_selected)
         if hasattr(self, 'paperSizeCombo'):
-            self.paperSizeCombo.setEnabled(checked)
-            self.orientationCombo.setEnabled(checked)
-            self.marginCombo.setEnabled(checked)
-            self.paperLabel.setEnabled(checked)
-            self.orientationLabel.setEnabled(checked)
-            self.marginLabel.setEnabled(checked)
+            self.paperSizeCombo.setEnabled(format_selected)
+            self.orientationCombo.setEnabled(format_selected)
+            self.marginCombo.setEnabled(format_selected)
+            self.paperLabel.setEnabled(format_selected)
+            self.orientationLabel.setEnabled(format_selected)
+            self.marginLabel.setEnabled(format_selected)
     
     def update_progress(self, value: int):
         """Update progress bar"""

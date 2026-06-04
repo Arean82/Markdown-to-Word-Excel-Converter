@@ -38,6 +38,8 @@ class ConversionWorker(QThread):
                 self.convert_to_word()
             elif self.conversion_type == "Excel":
                 self.convert_to_excel()
+            elif self.conversion_type == "PDF":
+                self.convert_to_pdf()
             else:
                 self.finished.emit(False, f"Unknown conversion type: {self.conversion_type}")
                 
@@ -45,6 +47,57 @@ class ConversionWorker(QThread):
             self.logger.error(f"Conversion error: {str(e)}")
             self.finished.emit(False, str(e))
     
+    def convert_to_pdf(self):
+        """Convert markdown to PDF using Pandoc (HTML) + Playwright"""
+        try:
+            import pypandoc
+            from playwright.sync_api import sync_playwright
+            
+            self.logger.info(f"Starting PDF conversion: {self.input_file}")
+            self.status.emit("Converting Markdown to HTML...")
+            self.progress.emit(30)
+            
+            extra_args = ['--standalone']
+            if not self.use_highlighting:
+                extra_args.append('--no-highlight')
+                
+            html_content = pypandoc.convert_file(self.input_file, 'html', extra_args=extra_args)
+            
+            self.status.emit("Rendering PDF with Playwright...")
+            self.progress.emit(60)
+            
+            # Map margins
+            margin_px = "1in"
+            if self.margin == "Narrow": margin_px = "0.5in"
+            elif self.margin == "Wide": margin_px = "2in"
+            
+            margin_dict = {
+                "top": margin_px, "right": margin_px, "bottom": margin_px, "left": margin_px
+            }
+            
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                page = browser.new_page()
+                page.set_content(html_content)
+                # Ensure the page formatting applies correctly
+                page.pdf(
+                    path=self.output_file,
+                    format=self.paper_size,
+                    landscape=(self.orientation == "Landscape"),
+                    margin=margin_dict,
+                    print_background=True
+                )
+                browser.close()
+                
+            self.progress.emit(100)
+            status = "with syntax highlighting" if self.use_highlighting else ""
+            self.logger.info(f"PDF conversion successful: {self.output_file}")
+            self.finished.emit(True, f"Successfully converted to PDF {status}:\n{self.output_file}")
+            
+        except Exception as e:
+            self.logger.error(f"PDF conversion failed: {str(e)}")
+            self.finished.emit(False, f"PDF conversion failed: {str(e)}\n\n(If it says browser executable doesn't exist, try running 'playwright install chromium' in your terminal)")
+
     def convert_to_word(self):
         """Convert markdown to Word using pypandoc_binary"""
         try:
@@ -259,13 +312,15 @@ class ConversionWorker(QThread):
                                 elif is_italic:
                                     cell_obj.font = Font(italic=True)
                                 
-                                # Get alignment from style attribute
-                                alignment_style = td.get('style', '')
-                                if 'text-align: center' in alignment_style:
+                                # Get alignment from style or align attribute
+                                align_attr = td.get('align', '').lower()
+                                style_attr = td.get('style', '').lower()
+                                
+                                if align_attr == 'center' or 'text-align: center' in style_attr:
                                     cell_obj.alignment = Alignment(horizontal="center")
-                                elif 'text-align: right' in alignment_style:
+                                elif align_attr == 'right' or 'text-align: right' in style_attr:
                                     cell_obj.alignment = Alignment(horizontal="right")
-                                elif 'text-align: left' in alignment_style:
+                                elif align_attr == 'left' or 'text-align: left' in style_attr:
                                     cell_obj.alignment = Alignment(horizontal="left")
                                 
                                 # Auto-adjust column width

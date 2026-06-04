@@ -5,7 +5,9 @@ A professional PyQt6 desktop application designed to bridge the gap between Mark
 
 ## 🚀 Key Features
 
-- 📄 **Word Conversion** – Full document flow using pypandoc_binary (no external Pandoc install required).
+- 📄 **Word Conversion** – Full document flow using pypandoc_binary (no external Pandoc install required), enhanced with `python-docx` for customizable page formatting (Paper Size, Orientation, Margins).
+
+- 📑 **PDF Conversion** – Generates beautiful, styled PDFs instantly using Playwright, preserving your selected page formatting (Size, Margins, Orientation).
 
 - 📊 **Powerhouse Excel Engine** – 
   - **Merged Cell Support**: Full rowspan and colspan mapping.
@@ -42,8 +44,10 @@ Unlike "lightweight" converters, this app uses a multi-stage pipeline to ensure 
 2. Install the verified "Combo Stack" dependencies:
 
 ```bash
-pip install PyQt6 pypandoc_binary pandas openpyxl beautifulsoup4 markdown "pytablewriter[excel]"
+pip install -r requirements.txt
 ```
+
+*(Note: For the PDF feature, you may need to run `playwright install chromium` once to download the headless browser engine)*
 
 ## Usage
 
@@ -54,9 +58,11 @@ python main.py
 
 2. Click "Browse" to select a Markdown file (.md)
 3. Choose conversion type:
-   - **Word (.docx)** - Converts entire document
+   - **Word (.docx)** - Converts entire document with page formatting
    - **Excel (.xlsx)** - Extracts tables with formatting
-4. Toggle syntax highlighting if needed (Word only)
+   - **PDF (.pdf)** - Converts document into a styled PDF
+4. Customize page format: Select your preferred Paper Size, Orientation, and Margins (applies to Word and PDF).
+5. Toggle syntax highlighting if needed (Word/PDF only)
 5. Click "Convert Now"
 6. Output file saves in the same folder as input
 
@@ -86,6 +92,8 @@ When converting to Excel, the application:
 ```
 PyQt6              - GUI framework
 pypandoc_binary    - Markdown to Word conversion (bundles Pandoc)
+python-docx        - Word document formatting (Margins, Size, Orientation)
+playwright         - Markdown to PDF conversion engine
 pandas             - Data manipulation for Excel
 openpyxl           - Excel file writing with formatting
 markdown           - Markdown to HTML conversion

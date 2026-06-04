@@ -135,9 +135,16 @@
           </widget>
          </item>
          <item>
+          <widget class="QRadioButton" name="pdfMarkdownRadio">
+           <property name="text">
+            <string>PDF (.pdf)</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QCheckBox" name="highlightCheck">
            <property name="text">
-            <string>🎨 Syntax highlighting (Word only)</string>
+            <string>🎨 Syntax highlighting (Word/PDF only)</string>
            </property>
            <property name="checked">
             <bool>true</bool>
