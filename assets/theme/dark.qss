@@ -93,3 +93,18 @@ QMenu {
 QMenu::item:selected {
     background-color: #0d6efd;
 }
+
+QPushButton#convertBtn {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 20px;
+}
+
+QPushButton#convertBtn:hover {
+    background-color: #218838;
+}
+
+QPushButton#convertBtn:disabled {
+    background-color: #6c757d;
+    color: #e0e0e0;
+}

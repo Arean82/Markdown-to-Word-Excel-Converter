@@ -103,8 +103,20 @@
            <pointsize>10</pointsize>
           </font>
          </property>
+         <property name="mouseTracking">
+          <bool>true</bool>
+         </property>
+         <property name="tabletTracking">
+          <bool>true</bool>
+         </property>
+         <property name="tabKeyNavigation">
+          <bool>true</bool>
+         </property>
          <property name="selectionMode">
           <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -144,16 +156,6 @@
           </widget>
          </item>
          <item>
-          <widget class="QCheckBox" name="highlightCheck">
-           <property name="text">
-            <string>🎨 Syntax highlighting (Word/PDF only)</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
           <spacer name="rightSpacer">
            <property name="orientation">
             <enum>Qt::Orientation::Horizontal</enum>
@@ -167,27 +169,12 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="convertBtn">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>120</width>
-             <height>40</height>
-            </size>
-           </property>
-           <property name="font">
-            <font>
-             <pointsize>11</pointsize>
-             <bold>true</bold>
-            </font>
-           </property>
-           <property name="styleSheet">
-            <string>QPushButton { background-color: #28a745; color: white; border-radius: 4px; padding: 10px 30px; } QPushButton:hover { background-color: #218838; } QPushButton:disabled { background-color: #6c757d; color: #e0e0e0; }</string>
-           </property>
+          <widget class="QCheckBox" name="highlightCheck">
            <property name="text">
-            <string>🚀 Convert to Word/Excel</string>
+            <string>🎨 Syntax highlighting (Word/PDF only)</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -271,14 +258,53 @@
         </layout>
        </item>
        <item>
-        <widget class="QLabel" name="outputLabel">
-         <property name="styleSheet">
-          <string>color: #888; font-style: italic;</string>
-         </property>
-         <property name="text">
-          <string>💾 Output saved in same folder as input file</string>
-         </property>
-        </widget>
+        <layout class="QHBoxLayout" name="convertActionLayout">
+         <item>
+          <widget class="QLabel" name="outputLabel">
+           <property name="styleSheet">
+            <string>color: #888; font-style: italic;</string>
+           </property>
+           <property name="text">
+            <string>💾 Output saved in same folder as input file</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="convertSpacer">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="convertBtn">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>220</width>
+             <height>45</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>11</pointsize>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>🚀 Convert to Word/Excel</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
       </layout>
      </widget>

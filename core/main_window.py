@@ -10,7 +10,7 @@ from PyQt6.QtWidgets import (QMainWindow, QFileDialog, QMessageBox,
                              QPushButton, QProgressBar, QLabel)
 from PyQt6.QtGui import QAction
 from PyQt6.uic import loadUi
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QSettings
 
 from core.logger import Logger
 from core.preview_dialog import PreviewDialog
@@ -35,8 +35,8 @@ class MainWindow(QMainWindow):
         loadUi(str(ui_path), self)
         
         # Set UI Size
-        self.resize(800, 600)
-        self.setMinimumSize(600, 500)
+        self.resize(850, 500)
+        self.setMinimumSize(600, 400)
         
         # Initialize logger
         self.logger = Logger()
@@ -46,6 +46,15 @@ class MainWindow(QMainWindow):
         self.current_file = None
         self.current_file_type = None
         self.worker = None
+        
+        # Setup QSettings for config.ini
+        ini_path = Path(__file__).parent.parent / 'config.ini'
+        self.settings = QSettings(str(ini_path), QSettings.Format.IniFormat)
+        self.last_path = self.settings.value("last_path", str(Path.home()))
+        self.current_theme = self.settings.value("theme", "auto")
+        
+        # Set dynamic property for qt-material to style it as a large primary action button
+        self.convertBtn.setProperty("class", "primary")
         
         # Initialize handlers
         self.md_handler = MarkdownHandler()
@@ -91,7 +100,7 @@ class MainWindow(QMainWindow):
         self.setup_menu()
         
         # Apply theme
-        self.apply_theme('light')
+        self.apply_theme(self.current_theme)
         
         # Connect UI signals
         self.selectFileBtn.clicked.connect(self.select_file)
@@ -151,6 +160,7 @@ class MainWindow(QMainWindow):
     
     def apply_theme(self, theme: str):
         """Apply theme stylesheet"""
+        self.current_theme = theme
         # Uncheck all
         if hasattr(self, 'actionAuto'):
             self.actionAuto.setChecked(False)
@@ -212,13 +222,14 @@ class MainWindow(QMainWindow):
         file_paths, _ = QFileDialog.getOpenFileNames(
             self,
             "Select Files",
-            "",
+            self.last_path,
             "Supported Files (*.md *.markdown *.mermaid *.mmd);;Markdown Files (*.md *.markdown);;Mermaid Files (*.mermaid *.mmd);;All Files (*)"
         )
         
         if not file_paths:
             return
             
+        self.last_path = str(Path(file_paths[0]).parent)
         self.current_files = file_paths
         self.fileListWidget.clear()
         for fp in self.current_files:
@@ -488,4 +499,24 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.logger.error(f"Export failed: {str(e)}")
             QMessageBox.critical(self, "Error", f"Failed to export diagram:\n{str(e)}")
+
+    def closeEvent(self, event):
+        """Clean up background threads before closing."""
+        try:
+            # Save settings
+            self.settings.setValue("theme", self.current_theme)
+            self.settings.setValue("last_path", self.last_path)
+            
+            if self.worker and self.worker.isRunning():
+                self.worker.quit()
+                self.worker.wait(1000)
+            
+            # Close preview dialog if open to kill any threads inside it
+            if hasattr(self, 'preview_dialog') and self.preview_dialog is not None:
+                self.preview_dialog.close()
+                
+        except Exception as e:
+            self.logger.error(f"Error during shutdown: {str(e)}")
+            
+        event.accept()
     
