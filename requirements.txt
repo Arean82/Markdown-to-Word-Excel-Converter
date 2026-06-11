@@ -13,3 +13,6 @@ playwright==1.46.0
 mermaid-py>=0.1.0
 pyppeteer>=2.0.0
 pyee==11.1.0
+qt-material>=2.14
+mkdocs-material>=9.5.0
+sphinx-material>=0.0.36

@@ -64,6 +64,8 @@ class MainWindow(QMainWindow):
         self.actionLight.setChecked(True)
         self.actionLight.triggered.connect(lambda: self.apply_theme('light'))
         
+        self.material_actions = []
+        
         self.actionViewLogs = QAction("View Logs", self)
         self.actionViewLogs.triggered.connect(self.show_logs)
         
@@ -112,6 +114,22 @@ class MainWindow(QMainWindow):
         theme_menu.addAction(self.actionDark)
         theme_menu.addAction(self.actionLight)
         
+        # Material sub-menu
+        material_menu = theme_menu.addMenu("Material Theme")
+        try:
+            import qt_material
+            for theme_name in qt_material.list_themes():
+                action = QAction(theme_name, self)
+                action.setCheckable(True)
+                action.setChecked(False)
+                # Capture theme_name in lambda
+                action.triggered.connect(lambda checked, t=theme_name: self.apply_theme(f'material:{t}'))
+                material_menu.addAction(action)
+                self.material_actions.append(action)
+        except ImportError:
+            material_menu.setEnabled(False)
+            material_menu.setToolTip("Please run 'pip install qt-material' to enable Material themes")
+        
         # Logs menu
         logs_menu = menubar.addMenu("Logs")
         logs_menu.addAction(self.actionViewLogs)
@@ -124,13 +142,39 @@ class MainWindow(QMainWindow):
     
     def apply_theme(self, theme: str):
         """Apply theme stylesheet"""
+        # Uncheck all
+        self.actionDark.setChecked(False)
+        self.actionLight.setChecked(False)
+        for action in self.material_actions:
+            action.setChecked(False)
+        
+        if theme.startswith('material:'):
+            material_theme_name = theme.split(':')[1]
+            # Check the specific action
+            for action in self.material_actions:
+                if action.text() == material_theme_name:
+                    action.setChecked(True)
+                    break
+                    
+            try:
+                from qt_material import apply_stylesheet
+                import os
+                # Apply the selected material theme
+                apply_stylesheet(self, theme=material_theme_name)
+                self.logger.info(f"Theme changed to Material: {material_theme_name}")
+            except ImportError:
+                self.logger.warning("qt-material is not installed")
+                self.apply_theme('dark') # fallback
+            return
+            
+        # Reset qt-material styling if switching away from material
+        self.setStyleSheet("")
+        
         if theme == 'dark':
             theme_path = Path(__file__).parent.parent / 'theme' / 'dark.qss'
             self.actionDark.setChecked(True)
-            self.actionLight.setChecked(False)
         else:
             theme_path = Path(__file__).parent.parent / 'theme' / 'light.qss'
-            self.actionDark.setChecked(False)
             self.actionLight.setChecked(True)
         
         if theme_path.exists():
