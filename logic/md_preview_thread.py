@@ -23,12 +23,35 @@ class MarkdownPreviewThread(QThread):
         self.use_highlighting = use_highlighting
         self.logger = Logger()
     
+    @staticmethod
+    def fix_markdown_tables(content: str) -> str:
+        """Ensure tables have a preceding blank line so strict parsers recognize them."""
+        lines = content.split('\n')
+        fixed_lines = []
+        in_code_block = False
+        
+        for i, line in enumerate(lines):
+            if line.strip().startswith('```'):
+                in_code_block = not in_code_block
+                
+            if not in_code_block and line.strip().startswith('|'):
+                if i > 0:
+                    prev_line = lines[i-1].strip()
+                    if prev_line and not prev_line.startswith('|') and not prev_line.startswith('```'):
+                        fixed_lines.append('')
+            
+            fixed_lines.append(line)
+            
+        return '\n'.join(fixed_lines)
+
     def run(self):
         """Generate preview in background thread"""
         try:
             # Read file
             with open(self.file_path, 'r', encoding='utf-8') as f:
                 raw_content = f.read()
+            
+            raw_content = self.fix_markdown_tables(raw_content)
             
             # Parse markdown to HTML
             extensions = [

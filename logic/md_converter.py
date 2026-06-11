@@ -13,6 +13,28 @@ from core.logger import Logger
 class ConversionWorker(QThread):
     """Worker thread for markdown conversion to keep UI responsive"""
     
+    @staticmethod
+    def fix_markdown_tables(content: str) -> str:
+        """Ensure tables have a preceding blank line so strict parsers recognize them."""
+        lines = content.split('\n')
+        fixed_lines = []
+        in_code_block = False
+        
+        for i, line in enumerate(lines):
+            if line.strip().startswith('```'):
+                in_code_block = not in_code_block
+                
+            if not in_code_block and line.strip().startswith('|'):
+                if i > 0:
+                    prev_line = lines[i-1].strip()
+                    if prev_line and not prev_line.startswith('|') and not prev_line.startswith('```'):
+                        fixed_lines.append('')
+            
+            fixed_lines.append(line)
+            
+        return '\n'.join(fixed_lines)
+
+    
     progress = pyqtSignal(int)
     status = pyqtSignal(str)
     finished = pyqtSignal(bool, str)
@@ -61,7 +83,21 @@ class ConversionWorker(QThread):
             if not self.use_highlighting:
                 extra_args.append('--no-highlight')
                 
-            html_content = pypandoc.convert_file(self.input_file, 'html', extra_args=extra_args)
+            # Read the markdown file
+            with open(self.input_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # Write to a temporary file
+            temp_md = Path(tempfile.gettempdir()) / f"temp_{Path(self.input_file).stem}.md"
+            with open(temp_md, 'w', encoding='utf-8') as f:
+                f.write(self.fix_markdown_tables(content))
+            
+            try:
+                html_content = pypandoc.convert_file(str(temp_md), 'html', format='gfm', extra_args=extra_args)
+            finally:
+                # Clean up temp file
+                if os.path.exists(temp_md):
+                    os.unlink(str(temp_md))
             
             self.status.emit("Rendering PDF with Playwright...")
             self.progress.emit(60)
@@ -117,7 +153,7 @@ class ConversionWorker(QThread):
             # Write to a temporary file
             temp_md = Path(tempfile.gettempdir()) / f"temp_{Path(self.input_file).stem}.md"
             with open(temp_md, 'w', encoding='utf-8') as f:
-                f.write(content)
+                f.write(self.fix_markdown_tables(content))
             
             try:
                 extra_args = ['--standalone']
@@ -128,6 +164,7 @@ class ConversionWorker(QThread):
                 pypandoc.convert_file(
                     str(temp_md),
                     'docx',
+                    format='gfm',
                     outputfile=self.output_file,
                     extra_args=extra_args
                 )
@@ -226,6 +263,7 @@ class ConversionWorker(QThread):
                 md_content = f.read()
             
             # Convert to HTML
+            md_content = self.fix_markdown_tables(md_content)
             html = markdown.markdown(md_content, extensions=['tables', 'fenced_code'])
             self.logger.info("Converted markdown to HTML, looking for tables")
             
