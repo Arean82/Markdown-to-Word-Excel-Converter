@@ -103,6 +103,11 @@ md_converter/
 ├── main.py                 # Application entry point
 ├── requirements.txt        # Python dependencies
 ├── README.md               # This file
+├── assets/                 # Static assets
+│   ├── icon.png            # Application icon
+│   └── theme/              # Theme stylesheets
+│       ├── dark.qss        # Dark theme
+│       └── light.qss       # Light theme
 ├── core/                   # Core UI components
 │   ├── main_window.py      # Main window logic (radio buttons)
 │   ├── menu.py             # Menu bar creation
@@ -111,12 +116,9 @@ md_converter/
 │   └── readme_viewer.py    # README viewer dialog
 ├── logic/                  # Business logic
 │   └── converter_thread.py # Conversion worker with Combo Engine
-├── ui/                     # UI design files
-│   ├── ui_mainwindow.ui    # Main window UI (radio buttons)
-│   └── preview_dialog.ui   # Preview dialog UI
-└── theme/                  # Theme stylesheets
-    ├── styles.qss.css      # Dark theme
-    └── light_styles.qss.css # Light theme
+└── ui/                     # UI design files
+    ├── ui_mainwindow.ui    # Main window UI (radio buttons)
+    └── preview_dialog.ui   # Preview dialog UI
 ```
 
 ## Troubleshooting

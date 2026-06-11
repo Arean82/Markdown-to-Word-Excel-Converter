@@ -191,14 +191,14 @@ class MainWindow(QMainWindow):
                 is_dark = app.palette().window().color().lightness() < 128
             else:
                 is_dark = False
-            theme_path = Path(__file__).parent.parent / 'theme' / ('dark.qss' if is_dark else 'light.qss')
+            theme_path = Path(__file__).parent.parent / 'assets' / 'theme' / ('dark.qss' if is_dark else 'light.qss')
             theme_name = 'dark' if is_dark else 'light'
         elif theme == 'dark':
-            theme_path = Path(__file__).parent.parent / 'theme' / 'dark.qss'
+            theme_path = Path(__file__).parent.parent / 'assets' / 'theme' / 'dark.qss'
             self.actionDark.setChecked(True)
             theme_name = 'dark'
         else:
-            theme_path = Path(__file__).parent.parent / 'theme' / 'light.qss'
+            theme_path = Path(__file__).parent.parent / 'assets' / 'theme' / 'light.qss'
             self.actionLight.setChecked(True)
             theme_name = 'light'
         

@@ -10,13 +10,18 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from PyQt6.QtWidgets import QApplication
+from PyQt6.QtGui import QIcon
 from core.main_window import MainWindow
-
 
 def main():
     """Application entry point"""
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
+    
+    # Set application icon (if present)
+    icon_path = Path(__file__).parent / 'assets' / 'icon.png'
+    if icon_path.exists():
+        app.setWindowIcon(QIcon(str(icon_path)))
     
     window = MainWindow()
     window.show()
