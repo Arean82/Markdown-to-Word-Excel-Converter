@@ -42,6 +42,7 @@ class MainWindow(QMainWindow):
         self.logger = Logger()
         
         # Initialize variables
+        self.current_files = []
         self.current_file = None
         self.current_file_type = None
         self.worker = None
@@ -98,6 +99,8 @@ class MainWindow(QMainWindow):
         
         # Initial state for Word settings
         self.toggle_word_settings()
+        
+        self.fileListWidget.itemSelectionChanged.connect(self.handle_list_selection)
         
         self.logger.info("Application started")
     
@@ -184,87 +187,93 @@ class MainWindow(QMainWindow):
     
     def select_file(self):
         """Open file selection dialog"""
-        file_path, _ = QFileDialog.getOpenFileName(
+        file_paths, _ = QFileDialog.getOpenFileNames(
             self,
-            "Select File",
+            "Select Files",
             "",
             "Supported Files (*.md *.markdown *.mermaid *.mmd);;Markdown Files (*.md *.markdown);;Mermaid Files (*.mermaid *.mmd);;All Files (*)"
         )
         
-        if not file_path:
+        if not file_paths:
             return
-        
-        self.current_file = file_path
-        self.fileLabel.setText(f"📁 {os.path.basename(file_path)}")
-        self.convertBtn.setEnabled(True)
-        self.previewBtn.setEnabled(True)
-        
-        # Detect file type by extension
-        if file_path.endswith(('.md', '.markdown')):
-            self.current_file_type = 'markdown'
-            self.fileTypeLabel.setText("📄 File type: Markdown")
-            self.load_markdown_preview()
-        elif file_path.endswith('.mermaid'):
-            self.current_file_type = 'mermaid'
-            self.fileTypeLabel.setText("🎨 File type: Mermaid Diagram")
-            self.load_mermaid_preview()
-        else:
-            self.detect_file_type_by_content()
-        
-        self.logger.info(f"File selected: {file_path} (type: {self.current_file_type})")
-        self.show_correct_section()
-    
-    def detect_file_type_by_content(self):
-        """Detect file type by reading content"""
-        try:
-            with open(self.current_file, 'r', encoding='utf-8') as f:
-                content = f.read(500)
             
-            if '```mermaid' in content:
-                self.current_file_type = 'markdown'
-                self.fileTypeLabel.setText("📄 File type: Markdown (with Mermaid diagrams)")
-                self.load_markdown_preview()
-            else:
-                self.current_file_type = 'markdown'
-                self.fileTypeLabel.setText("📄 File type: Markdown")
-                self.load_markdown_preview()
-        except Exception as e:
-            self.logger.error(f"Error detecting file type: {str(e)}")
-            self.statusLabel.setText(f"Error: {str(e)}")
-    
-    def load_markdown_preview(self):
-        """Load and display markdown preview"""
-        try:
-            preview_text = self.md_handler.get_preview(self.current_file)
-            self.previewText.setPlainText(preview_text)
-        except Exception as e:
-            self.logger.error(f"Error loading markdown preview: {str(e)}")
-            self.previewText.setPlainText(f"Error loading preview: {str(e)}")
-    
-    def load_mermaid_preview(self):
-        """Load and display mermaid preview"""
-        try:
-            preview_text = self.mermaid_handler.get_preview(self.current_file)
-            self.previewText.setPlainText(preview_text)
-        except Exception as e:
-            self.logger.error(f"Error loading mermaid preview: {str(e)}")
-            self.previewText.setPlainText(f"Error loading preview: {str(e)}")
+        self.current_files = file_paths
+        self.fileListWidget.clear()
+        for fp in self.current_files:
+            self.fileListWidget.addItem(os.path.basename(fp))
+            
+        # Select the first file by default
+        self.fileListWidget.setCurrentRow(0)
+        self.convertBtn.setEnabled(True)
+        
+        self.logger.info(f"Selected {len(self.current_files)} files.")
+        self.show_correct_section()
+        
+    def handle_list_selection(self):
+        """Handle selection change in the list widget"""
+        selected_items = self.fileListWidget.selectedItems()
+        if not selected_items:
+            self.previewBtn.setEnabled(False)
+            self.current_file = None
+            return
+            
+        self.previewBtn.setEnabled(True)
+        index = self.fileListWidget.currentRow()
+        self.current_file = self.current_files[index]
+        
+        if self.current_file.endswith(('.md', '.markdown')):
+            self.current_file_type = 'markdown'
+            self.fileTypeLabel.setText(f"📄 File type: Markdown")
+        elif self.current_file.endswith('.mermaid'):
+            self.current_file_type = 'mermaid'
+            self.fileTypeLabel.setText(f"🎨 File type: Mermaid Diagram")
+        else:
+            self.fileTypeLabel.setText(f"📄 File type: Unknown")
     
     def show_preview_dialog(self):
         """Show full preview dialog"""
-        if not self.current_file:
-            QMessageBox.warning(self, "Warning", "Please select a file first!")
+        if not self.current_files:
+            QMessageBox.warning(self, "Warning", "Please select files first!")
             return
+            
+        index = self.fileListWidget.currentRow()
+        if index < 0:
+            index = 0
         
         use_highlighting = self.highlightCheck.isChecked()
-        dialog = PreviewDialog(self.current_file, use_highlighting, self)
+        dialog = PreviewDialog(self.current_files, index, use_highlighting, self)
         dialog.exec()
-    
+
     def convert_file(self):
-        """Convert file based on type"""
-        if not self.current_file:
-            QMessageBox.warning(self, "Warning", "Please select a file first!")
+        """Convert all selected markdown files"""
+        if not self.current_files:
+            QMessageBox.warning(self, "Warning", "Please select files first!")
             return
+            
+        # Build queue of markdown files
+        self.conversion_queue = [f for f in self.current_files if f.endswith(('.md', '.markdown'))]
+        if not self.conversion_queue:
+            QMessageBox.warning(self, "Warning", "No markdown files selected for conversion.\nMermaid files are for diagram viewing only.")
+            return
+
+        self.set_ui_enabled(False)
+        self.progressBar.setVisible(True)
+        self.progressBar.setValue(0)
+        
+        self.conversion_successes = 0
+        self.conversion_failures = 0
+        self.start_next_conversion()
+
+    def start_next_conversion(self):
+        if not self.conversion_queue:
+            # Batch finished
+            self.set_ui_enabled(True)
+            self.progressBar.setValue(100)
+            self.statusLabel.setText("Batch conversion complete")
+            QMessageBox.information(self, "Batch Complete", f"Successfully converted {self.conversion_successes} file(s). Failed: {self.conversion_failures}")
+            return
+            
+        file_to_convert = self.conversion_queue.pop(0)
         
         if self.wordRadio.isChecked():
             output_ext = ".docx"
@@ -275,29 +284,18 @@ class MainWindow(QMainWindow):
         else:
             output_ext = ".xlsx"
             conv_type = "Excel"
-        
-        if self.current_file_type != 'markdown':
-            QMessageBox.warning(
-                self, 
-                "Warning", 
-                "Only markdown files (.md, .markdown) can be converted to Word/Excel/PDF.\nMermaid files are for diagram viewing only."
-            )
-            return
-        
-        input_path = Path(self.current_file)
+            
+        input_path = Path(file_to_convert)
         output_file = str(input_path.with_suffix(output_ext))
         use_highlighting = self.highlightCheck.isChecked()
         paper_size = self.paperSizeCombo.currentText() if hasattr(self, 'paperSizeCombo') else "A4"
         orientation = self.orientationCombo.currentText() if hasattr(self, 'orientationCombo') else "Portrait"
         margin = self.marginCombo.currentText() if hasattr(self, 'marginCombo') else "Normal"
         
-        self.set_ui_enabled(False)
-        self.progressBar.setVisible(True)
-        self.progressBar.setValue(0)
-        self.statusLabel.setText("Starting conversion...")
+        self.statusLabel.setText(f"Converting: {os.path.basename(file_to_convert)}...")
         
         self.worker = ConversionWorker(
-            self.current_file,
+            file_to_convert,
             output_file,
             conv_type,
             use_highlighting,
@@ -307,10 +305,19 @@ class MainWindow(QMainWindow):
         )
         self.worker.progress.connect(self.update_progress)
         self.worker.status.connect(self.update_status)
-        self.worker.finished.connect(self.conversion_finished)
+        self.worker.finished.connect(self.on_batch_conversion_finished)
         self.worker.start()
-        
-        self.logger.info(f"Started conversion: {self.current_file} -> {conv_type}")
+
+    def on_batch_conversion_finished(self, success: bool, message: str):
+        if success:
+            self.conversion_successes += 1
+            self.logger.info(f"Batch item successful: {message}")
+            self.recentLabel.setText(f"✅ Last: {os.path.basename(message.split(':')[-1].strip())}")
+        else:
+            self.conversion_failures += 1
+            self.logger.error(f"Batch item failed: {message}")
+            
+        self.start_next_conversion()
     
     def set_ui_enabled(self, enabled: bool):
         """Enable/disable UI elements"""
@@ -356,21 +363,6 @@ class MainWindow(QMainWindow):
     def update_status(self, message: str):
         """Update status label"""
         self.statusLabel.setText(message)
-    
-    def conversion_finished(self, success: bool, message: str):
-        """Handle conversion completion"""
-        self.progressBar.setVisible(False)
-        self.set_ui_enabled(True)
-        
-        if success:
-            self.statusLabel.setText("Conversion complete")
-            self.recentLabel.setText(f"✅ Last conversion: {os.path.basename(message.split(':')[-1].strip())}")
-            QMessageBox.information(self, "Success", message)
-            self.logger.info(f"Conversion successful: {message}")
-        else:
-            self.statusLabel.setText("Conversion failed")
-            self.logger.error(f"Conversion failed: {message}")
-            QMessageBox.critical(self, "Error", f"Conversion failed:\n{message}")
     
     def show_license(self):
         """Show license dialog"""

@@ -20,33 +20,60 @@ from logic.mermaid_preview_thread import MermaidPreviewThread
 class PreviewDialog(QDialog):
     """Dialog to show full preview of file content"""
     
-    def __init__(self, file_path: str, use_highlighting: bool = True, parent=None):
+    def __init__(self, file_paths: list, current_index: int, use_highlighting: bool = True, parent=None):
         super().__init__(parent)
         
         # Load UI
         ui_path = Path(__file__).parent.parent / 'ui' / 'preview_dialog.ui'
         loadUi(str(ui_path), self)
         
-        self.file_path = file_path
+        self.file_paths = file_paths
+        self.current_index = current_index
         self.use_highlighting = use_highlighting
         self.logger = Logger()
         
+        # Connect navigation buttons
+        self.prevFileBtn.clicked.connect(self.show_prev_file)
+        self.nextFileBtn.clicked.connect(self.show_next_file)
+        
+        # Connect close button
+        self.buttonBox.rejected.connect(self.close)
+        
+        # Load the initial file
+        self.load_file_at_index()
+
+    def load_file_at_index(self):
+        """Load the file at the current index"""
+        self.file_path = self.file_paths[self.current_index]
+        self.fileIndicatorLabel.setText(f"File {self.current_index + 1} of {len(self.file_paths)}")
+        
+        # Enable/Disable navigation buttons
+        self.prevFileBtn.setEnabled(self.current_index > 0)
+        self.nextFileBtn.setEnabled(self.current_index < len(self.file_paths) - 1)
+        
         # Detect file type by extension
-        if file_path.endswith(('.md', '.markdown')):
+        if self.file_path.endswith(('.md', '.markdown')):
             self.file_type = 'markdown'
-            self.setWindowTitle(f"Preview: {os.path.basename(file_path)}")
+            self.setWindowTitle(f"Preview: {os.path.basename(self.file_path)}")
             self.load_markdown_preview()
-        elif file_path.endswith('.mermaid'):
+        elif self.file_path.endswith('.mermaid'):
             self.file_type = 'mermaid'
-            self.setWindowTitle(f"Mermaid Diagram Preview: {os.path.basename(file_path)}")
+            self.setWindowTitle(f"Mermaid Diagram Preview: {os.path.basename(self.file_path)}")
             self.load_mermaid_preview()
         else:
             # Try to detect by content
             self.detect_file_type()
-        
-        # Connect close button
-        self.buttonBox.rejected.connect(self.close)
-    
+            
+    def show_prev_file(self):
+        if self.current_index > 0:
+            self.current_index -= 1
+            self.load_file_at_index()
+            
+    def show_next_file(self):
+        if self.current_index < len(self.file_paths) - 1:
+            self.current_index += 1
+            self.load_file_at_index()
+
     def detect_file_type(self):
         """Detect file type by reading content"""
         try:

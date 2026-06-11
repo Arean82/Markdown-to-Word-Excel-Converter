@@ -162,6 +162,34 @@
    </item>
    
    <item>
+    <layout class="QHBoxLayout" name="navLayout">
+     <item>
+      <widget class="QPushButton" name="prevFileBtn">
+       <property name="text">
+        <string>◀ Previous File</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="fileIndicatorLabel">
+       <property name="text">
+        <string>File 1 of 1</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignmentFlag::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="nextFileBtn">
+       <property name="text">
+        <string>Next File ▶</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="orientation">
       <enum>Qt::Orientation::Horizontal</enum>

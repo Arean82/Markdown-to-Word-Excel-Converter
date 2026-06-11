@@ -47,23 +47,26 @@
      </widget>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="fileLayout" stretch="2,6,2">
+     <layout class="QHBoxLayout" name="fileLayout">
       <item>
        <widget class="QPushButton" name="selectFileBtn">
         <property name="text">
-         <string>📂 Select File</string>
+         <string>📂 Select Files</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QLabel" name="fileLabel">
-        <property name="styleSheet">
-         <string>padding: 8px; border: 1px solid #3c3c3c; border-radius: 4px;</string>
+       <spacer name="fileSpacer">
+        <property name="orientation">
+         <enum>Qt::Orientation::Horizontal</enum>
         </property>
-        <property name="text">
-         <string>No file selected</string>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
         </property>
-       </widget>
+       </spacer>
       </item>
       <item>
        <widget class="QPushButton" name="previewBtn">
@@ -71,7 +74,7 @@
          <bool>false</bool>
         </property>
         <property name="text">
-         <string>👁️ Preview</string>
+         <string>👁️ Preview Selected</string>
         </property>
        </widget>
       </item>
@@ -88,21 +91,20 @@
      </widget>
     </item>
     <item>
-     <widget class="QGroupBox" name="previewGroup">
+     <widget class="QGroupBox" name="fileListGroup">
       <property name="title">
-       <string>Preview</string>
+       <string>Selected Files</string>
       </property>
-      <layout class="QVBoxLayout" name="previewLayout">
+      <layout class="QVBoxLayout" name="fileListLayout">
        <item>
-        <widget class="QTextEdit" name="previewText">
+        <widget class="QListWidget" name="fileListWidget">
          <property name="font">
           <font>
-           <family>Consolas</family>
            <pointsize>10</pointsize>
           </font>
          </property>
-         <property name="readOnly">
-          <bool>true</bool>
+         <property name="selectionMode">
+          <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
          </property>
         </widget>
        </item>
@@ -171,7 +173,7 @@
            </property>
            <property name="font">
             <font>
-             <pointsize>12</pointsize>
+             <pointsize>11</pointsize>
              <bold>true</bold>
             </font>
            </property>
