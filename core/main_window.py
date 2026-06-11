@@ -60,6 +60,11 @@ class MainWindow(QMainWindow):
         self.actionDark.setChecked(False)
         self.actionDark.triggered.connect(lambda: self.apply_theme('dark'))
         
+        self.actionAuto = QAction("Auto (Adaptive)", self)
+        self.actionAuto.setCheckable(True)
+        self.actionAuto.setChecked(False)
+        self.actionAuto.triggered.connect(lambda: self.apply_theme('auto'))
+        
         self.actionLight = QAction("Light", self)
         self.actionLight.setCheckable(True)
         self.actionLight.setChecked(True)
@@ -114,6 +119,7 @@ class MainWindow(QMainWindow):
         
         # Theme menu
         theme_menu = menubar.addMenu("Theme")
+        theme_menu.addAction(self.actionAuto)
         theme_menu.addAction(self.actionDark)
         theme_menu.addAction(self.actionLight)
         
@@ -146,6 +152,8 @@ class MainWindow(QMainWindow):
     def apply_theme(self, theme: str):
         """Apply theme stylesheet"""
         # Uncheck all
+        if hasattr(self, 'actionAuto'):
+            self.actionAuto.setChecked(False)
         self.actionDark.setChecked(False)
         self.actionLight.setChecked(False)
         for action in self.material_actions:
@@ -173,17 +181,31 @@ class MainWindow(QMainWindow):
         # Reset qt-material styling if switching away from material
         self.setStyleSheet("")
         
-        if theme == 'dark':
+        if theme == 'auto':
+            if hasattr(self, 'actionAuto'):
+                self.actionAuto.setChecked(True)
+            import PyQt6.QtWidgets as QtWidgets
+            app = QtWidgets.QApplication.instance()
+            if app:
+                # Use window color lightness to guess system theme
+                is_dark = app.palette().window().color().lightness() < 128
+            else:
+                is_dark = False
+            theme_path = Path(__file__).parent.parent / 'theme' / ('dark.qss' if is_dark else 'light.qss')
+            theme_name = 'dark' if is_dark else 'light'
+        elif theme == 'dark':
             theme_path = Path(__file__).parent.parent / 'theme' / 'dark.qss'
             self.actionDark.setChecked(True)
+            theme_name = 'dark'
         else:
             theme_path = Path(__file__).parent.parent / 'theme' / 'light.qss'
             self.actionLight.setChecked(True)
+            theme_name = 'light'
         
         if theme_path.exists():
             with open(theme_path, 'r', encoding='utf-8') as f:
                 self.setStyleSheet(f.read())
-            self.logger.info(f"Theme changed to {theme}")
+            self.logger.info(f"Theme changed to {theme} (applied {theme_name})")
     
     def select_file(self):
         """Open file selection dialog"""

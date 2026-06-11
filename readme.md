@@ -5,22 +5,17 @@ A professional PyQt6 desktop application designed to bridge the gap between Mark
 
 ## 🚀 Key Features
 
-- 📄 **Word Conversion** – Full document flow using pypandoc_binary (no external Pandoc install required), enhanced with `python-docx` for customizable page formatting (Paper Size, Orientation, Margins).
-
-- 📑 **PDF Conversion** – Generates beautiful, styled PDFs instantly using Playwright, preserving your selected page formatting (Size, Margins, Orientation).
-
+- 📦 **Batch Conversion** – Select multiple Markdown files and convert them all simultaneously to your target format.
+- 📄 **Word Conversion** – Full document flow using pypandoc_binary, enhanced with `python-docx` for customizable page formatting (Size, Orientation, Margins).
+- 📑 **PDF Conversion** – Generates beautiful, styled PDFs instantly using Playwright, preserving your selected page formatting.
 - 📊 **Powerhouse Excel Engine** – 
   - **Merged Cell Support**: Full rowspan and colspan mapping.
   - **Rich Formatting**: Preserves bold, italic, and text alignment.
-  - **Smart Architecture**: Automatically handles 100+ tables by splitting them into organized Sheets/Tabs.
-
-- 👁️ **Live Preview** – High-speed 50KB buffered preview with three specialized views: Raw, Rendered, and Table Structure.
-
-- 🔗 **Intelligent Fallback** – If no formal tables are detected, it uses pytablewriter to extract lists and key-value pairs.
-
-- 🌓 **Adaptive UI** – Support for System-aware Dark and Light themes.
-
-- 🧵 **Asynchronous Processing** – Entire conversion runs on a worker thread (QThread) to prevent GUI freezing.
+  - **Smart Architecture**: Automatically handles 100+ tables by splitting them into organized Sheets/Tabs without relying on `pandas`.
+- 👁️ **Interactive Preview Navigation** – Dedicated preview dialog allowing you to seamlessly flip through multiple files (◀ / ▶) in Raw, HTML Rendered, or Table Structure view.
+- 🔗 **Intelligent Fallback** – If no formal tables are detected, it uses `pytablewriter` to automatically extract lists and key-value pairs.
+- 🌓 **Adaptive UI** – Support for System-aware Dark and Light modes (Auto), alongside dozens of beautiful `qt-material` themes.
+- 🧵 **Asynchronous Processing** – Entire batch runs on worker threads to keep the UI perfectly smooth.
 
 ## 📖 How the "Combo" Engine Works
 
@@ -56,20 +51,20 @@ pip install -r requirements.txt
 python main.py
 ```
 
-2. Click "Browse" to select a Markdown file (.md)
-3. Choose conversion type:
+2. Click "Select Files" to grab one or more Markdown/Mermaid files.
+3. Your selected files will neatly populate the **Selected Files** list.
+4. Choose conversion type:
    - **Word (.docx)** - Converts entire document with page formatting
    - **Excel (.xlsx)** - Extracts tables with formatting
    - **PDF (.pdf)** - Converts document into a styled PDF
-4. Customize page format: Select your preferred Paper Size, Orientation, and Margins (applies to Word and PDF).
-5. Toggle syntax highlighting if needed (Word/PDF only)
-5. Click "Convert Now"
-6. Output file saves in the same folder as input
+5. Customize page format: Select your preferred Paper Size, Orientation, and Margins.
+6. Toggle syntax highlighting if needed.
+7. Click "Convert" – the app will automatically batch-process every file in your list!
 
-### Preview Feature
-- Click "Preview" button to see rendered markdown
-- Three tabs: Raw Markdown, Rendered Preview, Detected Tables
-- Shows table structure and formatting before conversion
+### Interactive Preview
+- Highlight any file in your list and click "👁️ Preview Selected"
+- A dedicated Preview Window opens showing the Raw, HTML, and extracted Tables.
+- Use the **◀ Previous File** and **Next File ▶** buttons at the bottom of the dialog to instantly flip through previews of all your selected files without closing the window.
 
 ## Excel Conversion Details
 
@@ -91,16 +86,14 @@ When converting to Excel, the application:
 
 ```
 PyQt6              - GUI framework
-pypandoc_binary    - Markdown to Word conversion (bundles Pandoc)
+qt-material        - Beautiful modern UI themes
+pypandoc_binary    - Markdown to Word conversion
 python-docx        - Word document formatting (Margins, Size, Orientation)
 playwright         - Markdown to PDF conversion engine
-pandas             - Data manipulation for Excel
-openpyxl           - Excel file writing with formatting
+openpyxl           - Excel file writing with high-fidelity formatting
 markdown           - Markdown to HTML conversion
 beautifulsoup4     - HTML parsing for table extraction
-lxml               - Fast HTML parsing (pandas dependency)
-numpy              - Numerical operations (pandas dependency)
-pytablewriter      - Excel writing with formatting support
+pytablewriter      - Excel fallback extraction
 ```
 
 ## Project Structure
