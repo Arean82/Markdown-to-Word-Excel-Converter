@@ -65,6 +65,21 @@ class ReadmeViewerDialog(QDialog):
                     with open(path, "r", encoding="utf-8") as f:
                         md_content = f.read()
                     
+                    # Fix markdown tables without preceding blank lines
+                    lines = md_content.split('\n')
+                    fixed_lines = []
+                    in_code_block = False
+                    for i, line in enumerate(lines):
+                        if line.strip().startswith('```'):
+                            in_code_block = not in_code_block
+                        if not in_code_block and line.strip().startswith('|'):
+                            if i > 0:
+                                prev_line = lines[i-1].strip()
+                                if prev_line and not prev_line.startswith('|') and not prev_line.startswith('```'):
+                                    fixed_lines.append('')
+                        fixed_lines.append(line)
+                    md_content = '\n'.join(fixed_lines)
+                    
                     html = markdown.markdown(md_content, extensions=["fenced_code", "tables"])
                     
                     # Wrap in styled HTML

@@ -10,6 +10,28 @@ import markdown
 
 class ConversionWorker(QThread):
     """Worker thread for conversion to keep UI responsive"""
+    
+    @staticmethod
+    def fix_markdown_tables(content: str) -> str:
+        """Ensure tables have a preceding blank line so strict parsers recognize them."""
+        lines = content.split('\n')
+        fixed_lines = []
+        in_code_block = False
+        
+        for i, line in enumerate(lines):
+            if line.strip().startswith('```'):
+                in_code_block = not in_code_block
+                
+            if not in_code_block and line.strip().startswith('|'):
+                if i > 0:
+                    prev_line = lines[i-1].strip()
+                    if prev_line and not prev_line.startswith('|') and not prev_line.startswith('```'):
+                        fixed_lines.append('')
+            
+            fixed_lines.append(line)
+            
+        return '\n'.join(fixed_lines)
+
     progress = pyqtSignal(int)
     status = pyqtSignal(str)
     finished = pyqtSignal(bool, str)
@@ -57,7 +79,7 @@ class ConversionWorker(QThread):
             # Write to a temporary file
             temp_md = Path(tempfile.gettempdir()) / f"temp_no_hr_{Path(self.input_file).stem}.md"
             with open(temp_md, 'w', encoding='utf-8') as f:
-                f.write(content)
+                f.write(self.fix_markdown_tables(content))
             
             # Convert the temporary file
             pypandoc.convert_file(
@@ -106,6 +128,7 @@ class ConversionWorker(QThread):
                 md_content = f.read()
 
             # Convert to HTML
+            md_content = self.fix_markdown_tables(md_content)
             html = markdown.markdown(md_content, extensions=['tables', 'fenced_code'])
             logger.info(f"Converted markdown to HTML, looking for tables")
 
