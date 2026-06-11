@@ -5,7 +5,6 @@ from PyQt6.QtCore import QThread, pyqtSignal
 import markdown
 from markdown.extensions.codehilite import CodeHiliteExtension
 from bs4 import BeautifulSoup
-import pandas as pd
 import re
 
 from core.logger import Logger
@@ -84,8 +83,12 @@ class MarkdownPreviewThread(QThread):
             
             for i, table in enumerate(tables, 1):
                 try:
-                    df = pd.read_html(str(table))[0]
-                    table_info.append(f"Table {i}: {df.shape[0]} rows × {df.shape[1]} columns")
+                    rows = table.find_all('tr')
+                    row_count = len(rows)
+                    col_count = 0
+                    if row_count > 0:
+                        col_count = len(rows[0].find_all(['th', 'td']))
+                    table_info.append(f"Table {i}: {row_count} rows × {col_count} columns")
                 except Exception as e:
                     self.logger.warning(f"Failed to parse table {i}: {str(e)}")
                     table_info.append(f"Table {i}: (unable to parse)")
