@@ -35,8 +35,8 @@ class MainWindow(QMainWindow):
         loadUi(str(ui_path), self)
         
         # Set UI Size
-        self.resize(850, 500)
-        self.setMinimumSize(600, 400)
+        self.resize(560, 500)
+        self.setMinimumSize(560, 500)
         
         # Initialize logger
         self.logger = Logger()

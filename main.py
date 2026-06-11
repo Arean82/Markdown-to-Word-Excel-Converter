@@ -16,7 +16,9 @@ from core.main_window import MainWindow
 def main():
     """Application entry point"""
     app = QApplication(sys.argv)
-    app.setStyle('Fusion')
+    from PyQt6.QtWidgets import QStyleFactory
+    if 'Fusion' in QStyleFactory.keys():
+        app.setStyle('Fusion')
     
     # Set application icon (if present)
     icon_path = Path(__file__).parent / 'assets' / 'icon.png'
