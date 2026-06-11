@@ -39,7 +39,7 @@ class ConversionWorker(QThread):
     status = pyqtSignal(str)
     finished = pyqtSignal(bool, str)
     
-    def __init__(self, input_file: str, output_file: str, conversion_type: str, use_highlighting: bool = True, paper_size: str = "A4", orientation: str = "Portrait", margin: str = "Normal"):
+    def __init__(self, input_file: str, output_file: str, conversion_type: str, use_highlighting: bool = True, paper_size: str = "A4", orientation: str = "Portrait", margin: str = "Normal", custom_margins: dict = None):
         super().__init__()
         self.input_file = input_file
         self.output_file = output_file
@@ -48,6 +48,7 @@ class ConversionWorker(QThread):
         self.paper_size = paper_size
         self.orientation = orientation
         self.margin = margin
+        self.custom_margins = custom_margins if custom_margins else {"top": 2.54, "bottom": 2.54, "left": 2.54, "right": 2.54}
         self.logger = Logger()
     
     def run(self):
@@ -98,18 +99,36 @@ class ConversionWorker(QThread):
                 # Clean up temp file
                 if os.path.exists(temp_md):
                     os.unlink(str(temp_md))
+                    
+            # Inject CSS to remove unwanted spacing at the top of the document and fix tables
+            css_fix = """<style>
+            body { margin-top: 0 !important; padding-top: 0 !important; }
+            body > *:first-child { margin-top: 0 !important; padding-top: 0 !important; }
+            table { width: 100% !important; max-width: 100% !important; table-layout: fixed !important; word-wrap: break-word !important; overflow-wrap: break-word !important; }
+            th, td { word-break: break-word !important; white-space: normal !important; overflow: hidden !important; }
+            </style></head>"""
+            html_content = html_content.replace("</head>", css_fix)
             
             self.status.emit("Rendering PDF with Playwright...")
             self.progress.emit(60)
             
             # Map margins
-            margin_px = "1in"
-            if self.margin == "Narrow": margin_px = "0.5in"
-            elif self.margin == "Wide": margin_px = "2in"
-            
-            margin_dict = {
-                "top": margin_px, "right": margin_px, "bottom": margin_px, "left": margin_px
-            }
+            if self.margin == "Custom":
+                unit = "in" if self.custom_margins.get("is_inch", False) else "cm"
+                margin_dict = {
+                    "top": f"{self.custom_margins.get('top', 2.54)}{unit}",
+                    "right": f"{self.custom_margins.get('right', 2.54)}{unit}",
+                    "bottom": f"{self.custom_margins.get('bottom', 2.54)}{unit}",
+                    "left": f"{self.custom_margins.get('left', 2.54)}{unit}"
+                }
+            else:
+                margin_px = "1in"
+                if self.margin == "Narrow": margin_px = "0.5in"
+                elif self.margin == "Wide": margin_px = "2in"
+                
+                margin_dict = {
+                    "top": margin_px, "right": margin_px, "bottom": margin_px, "left": margin_px
+                }
             
             with sync_playwright() as p:
                 browser = p.chromium.launch(headless=True)
@@ -216,12 +235,63 @@ class ConversionWorker(QThread):
                         section.bottom_margin = Inches(1)
                         section.left_margin = Inches(2)
                         section.right_margin = Inches(2)
+                    elif self.margin == "Custom":
+                        from docx.shared import Cm, Inches
+                        is_inch = self.custom_margins.get("is_inch", False)
+                        unit_func = Inches if is_inch else Cm
+                        section.top_margin = unit_func(self.custom_margins.get("top", 2.54))
+                        section.bottom_margin = unit_func(self.custom_margins.get("bottom", 2.54))
+                        section.left_margin = unit_func(self.custom_margins.get("left", 2.54))
+                        section.right_margin = unit_func(self.custom_margins.get("right", 2.54))
                     else: # Normal
                         section.top_margin = Inches(1)
                         section.bottom_margin = Inches(1)
                         section.left_margin = Inches(1)
                         section.right_margin = Inches(1)
                         
+                # Fix tables being cut off: Auto resize and word wrap
+                from docx.enum.table import WD_TABLE_ALIGNMENT
+                from docx.oxml.shared import OxmlElement
+                from docx.oxml.ns import qn
+                
+                for table in doc.tables:
+                    table.alignment = WD_TABLE_ALIGNMENT.CENTER
+                    table.autofit = False
+                    table.allow_autofit = False
+                    
+                    # Explicitly calculate column widths so it never cuts off
+                    page_width = section.page_width - section.left_margin - section.right_margin
+                    if table.columns and len(table.columns) > 0:
+                        col_width = int(page_width / len(table.columns))
+                        
+                        tblGrid = table._tbl.find(qn('w:tblGrid'))
+                        if tblGrid is not None:
+                            for gridCol in tblGrid.findall(qn('w:gridCol')):
+                                gridCol.set(qn('w:w'), str(col_width))
+                        
+                        from docx.shared import Pt
+                        for row in table.rows:
+                            for cell in row.cells:
+                                cell.width = col_width
+                                tcPr = cell._tc.get_or_add_tcPr()
+                                tcW = tcPr.find(qn('w:tcW'))
+                                if tcW is not None:
+                                    tcW.set(qn('w:type'), 'dxa')
+                                    tcW.set(qn('w:w'), str(col_width))
+                                    
+                                # Reduce font size of all text in the cell to fit better
+                                for paragraph in cell.paragraphs:
+                                    for run in paragraph.runs:
+                                        current_size_pt = run.font.size.pt if run.font.size else 11.0
+                                        new_size_pt = min(9.0, current_size_pt - 2.0)
+                                        run.font.size = Pt(new_size_pt)
+
+                # Remove empty paragraphs at the beginning of the document
+                while doc.paragraphs and not doc.paragraphs[0].text.strip():
+                    p = doc.paragraphs[0]._element
+                    p.getparent().remove(p)
+                    # p._p = p._element = None (This causes AttributeError sometimes, so just remove the XML element)
+                    
                 doc.save(self.output_file)
             except ImportError:
                 self.logger.warning("python-docx not installed, skipping page formatting")

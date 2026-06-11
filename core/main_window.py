@@ -35,8 +35,8 @@ class MainWindow(QMainWindow):
         loadUi(str(ui_path), self)
         
         # Set UI Size
-        self.resize(560, 500)
-        self.setMinimumSize(560, 500)
+        self.resize(560, 600)
+        self.setMinimumSize(560, 600)
         
         # Initialize logger
         self.logger = Logger()
@@ -52,6 +52,46 @@ class MainWindow(QMainWindow):
         self.settings = QSettings(str(ini_path), QSettings.Format.IniFormat)
         self.last_path = self.settings.value("last_path", str(Path.home()))
         self.current_theme = self.settings.value("theme", "auto")
+        
+        # Load saved margin settings
+        if hasattr(self, 'doubleSpinBox'):
+            self.doubleSpinBox.setValue(float(self.settings.value("margin_top", 2.54)))
+        if hasattr(self, 'doubleSpinBox_4'):
+            self.doubleSpinBox_4.setValue(float(self.settings.value("margin_bottom", 2.54)))
+        if hasattr(self, 'doubleSpinBox_3'):
+            self.doubleSpinBox_3.setValue(float(self.settings.value("margin_left", 2.54)))
+        if hasattr(self, 'doubleSpinBox_2'):
+            self.doubleSpinBox_2.setValue(float(self.settings.value("margin_right", 2.54)))
+        if hasattr(self, 'checkBox'):
+            self.checkBox.setChecked(str(self.settings.value("margin_is_inch", "false")).lower() == "true")
+            
+        saved_margin_preset = self.settings.value("margin_preset", "Normal")
+        if hasattr(self, 'marginCombo'):
+            index = self.marginCombo.findText(saved_margin_preset)
+            if index >= 0:
+                self.marginCombo.setCurrentIndex(index)
+                
+        # Load paper size, orientation, format radio, and highlight
+        saved_paper_size = self.settings.value("paper_size", "A4")
+        if hasattr(self, 'paperSizeCombo'):
+            index = self.paperSizeCombo.findText(saved_paper_size)
+            if index >= 0: self.paperSizeCombo.setCurrentIndex(index)
+            
+        saved_orientation = self.settings.value("orientation", "Portrait")
+        if hasattr(self, 'orientationCombo'):
+            index = self.orientationCombo.findText(saved_orientation)
+            if index >= 0: self.orientationCombo.setCurrentIndex(index)
+            
+        if hasattr(self, 'highlightCheck'):
+            self.highlightCheck.setChecked(str(self.settings.value("highlight", "true")).lower() == "true")
+            
+        saved_format = self.settings.value("format", "Word")
+        if saved_format == "Word" and hasattr(self, 'wordRadio'):
+            self.wordRadio.setChecked(True)
+        elif saved_format == "Excel" and hasattr(self, 'excelRadio'):
+            self.excelRadio.setChecked(True)
+        elif saved_format == "PDF" and hasattr(self, 'pdfMarkdownRadio'):
+            self.pdfMarkdownRadio.setChecked(True)
         
         # Set dynamic property for qt-material to style it as a large primary action button
         self.convertBtn.setProperty("class", "primary")
@@ -110,13 +150,48 @@ class MainWindow(QMainWindow):
         self.wordRadio.toggled.connect(self.toggle_word_settings)
         if hasattr(self, 'pdfMarkdownRadio'):
             self.pdfMarkdownRadio.toggled.connect(self.toggle_word_settings)
+            
+        if hasattr(self, 'marginCombo'):
+            self.marginCombo.currentTextChanged.connect(self.on_margin_changed)
+            self.on_margin_changed(self.marginCombo.currentText())
         
         # Initial state for Word settings
         self.toggle_word_settings()
         
         self.fileListWidget.itemSelectionChanged.connect(self.handle_list_selection)
-        
         self.logger.info("Application started")
+        
+    def on_margin_changed(self, text: str):
+        if text == "Normal":
+            if hasattr(self, 'doubleSpinBox'): self.doubleSpinBox.setValue(2.54)
+            if hasattr(self, 'doubleSpinBox_4'): self.doubleSpinBox_4.setValue(2.54)
+            if hasattr(self, 'doubleSpinBox_3'): self.doubleSpinBox_3.setValue(2.54)
+            if hasattr(self, 'doubleSpinBox_2'): self.doubleSpinBox_2.setValue(2.54)
+            if hasattr(self, 'checkBox'): self.checkBox.setChecked(False)
+        elif text == "Narrow":
+            if hasattr(self, 'doubleSpinBox'): self.doubleSpinBox.setValue(1.27)
+            if hasattr(self, 'doubleSpinBox_4'): self.doubleSpinBox_4.setValue(1.27)
+            if hasattr(self, 'doubleSpinBox_3'): self.doubleSpinBox_3.setValue(1.27)
+            if hasattr(self, 'doubleSpinBox_2'): self.doubleSpinBox_2.setValue(1.27)
+            if hasattr(self, 'checkBox'): self.checkBox.setChecked(False)
+        elif text == "Wide":
+            if hasattr(self, 'doubleSpinBox'): self.doubleSpinBox.setValue(2.54)
+            if hasattr(self, 'doubleSpinBox_4'): self.doubleSpinBox_4.setValue(2.54)
+            if hasattr(self, 'doubleSpinBox_3'): self.doubleSpinBox_3.setValue(5.08)
+            if hasattr(self, 'doubleSpinBox_2'): self.doubleSpinBox_2.setValue(5.08)
+            if hasattr(self, 'checkBox'): self.checkBox.setChecked(False)
+            
+        # Optional: enable/disable them depending on Custom
+        custom_enabled = (text == "Custom")
+        if hasattr(self, 'doubleSpinBox'): self.doubleSpinBox.setEnabled(custom_enabled)
+        if hasattr(self, 'doubleSpinBox_4'): self.doubleSpinBox_4.setEnabled(custom_enabled)
+        if hasattr(self, 'doubleSpinBox_3'): self.doubleSpinBox_3.setEnabled(custom_enabled)
+        if hasattr(self, 'doubleSpinBox_2'): self.doubleSpinBox_2.setEnabled(custom_enabled)
+        if hasattr(self, 'checkBox'): self.checkBox.setEnabled(custom_enabled)
+
+    def _finish_init(self):
+        # Extracted out from the previous indentation error
+        pass
     
     def setup_menu(self):
         """Create menu bar programmatically"""
@@ -325,6 +400,14 @@ class MainWindow(QMainWindow):
         orientation = self.orientationCombo.currentText() if hasattr(self, 'orientationCombo') else "Portrait"
         margin = self.marginCombo.currentText() if hasattr(self, 'marginCombo') else "Normal"
         
+        custom_margins = {
+            "top": self.doubleSpinBox.value() if hasattr(self, 'doubleSpinBox') else 2.54,
+            "bottom": self.doubleSpinBox_4.value() if hasattr(self, 'doubleSpinBox_4') else 2.54,
+            "left": self.doubleSpinBox_3.value() if hasattr(self, 'doubleSpinBox_3') else 2.54,
+            "right": self.doubleSpinBox_2.value() if hasattr(self, 'doubleSpinBox_2') else 2.54,
+            "is_inch": self.checkBox.isChecked() if hasattr(self, 'checkBox') else False
+        }
+        
         self.statusLabel.setText(f"Converting: {os.path.basename(file_to_convert)}...")
         
         self.worker = ConversionWorker(
@@ -334,7 +417,8 @@ class MainWindow(QMainWindow):
             use_highlighting,
             paper_size,
             orientation,
-            margin
+            margin,
+            custom_margins
         )
         self.worker.progress.connect(self.update_progress)
         self.worker.status.connect(self.update_status)
@@ -506,6 +590,35 @@ class MainWindow(QMainWindow):
             # Save settings
             self.settings.setValue("theme", self.current_theme)
             self.settings.setValue("last_path", self.last_path)
+            
+            # Save margin settings
+            if hasattr(self, 'marginCombo'):
+                self.settings.setValue("margin_preset", self.marginCombo.currentText())
+            if hasattr(self, 'doubleSpinBox'):
+                self.settings.setValue("margin_top", self.doubleSpinBox.value())
+            if hasattr(self, 'doubleSpinBox_4'):
+                self.settings.setValue("margin_bottom", self.doubleSpinBox_4.value())
+            if hasattr(self, 'doubleSpinBox_3'):
+                self.settings.setValue("margin_left", self.doubleSpinBox_3.value())
+            if hasattr(self, 'doubleSpinBox_2'):
+                self.settings.setValue("margin_right", self.doubleSpinBox_2.value())
+            if hasattr(self, 'checkBox'):
+                self.settings.setValue("margin_is_inch", self.checkBox.isChecked())
+                
+            # Save other format settings
+            if hasattr(self, 'paperSizeCombo'):
+                self.settings.setValue("paper_size", self.paperSizeCombo.currentText())
+            if hasattr(self, 'orientationCombo'):
+                self.settings.setValue("orientation", self.orientationCombo.currentText())
+            if hasattr(self, 'highlightCheck'):
+                self.settings.setValue("highlight", self.highlightCheck.isChecked())
+                
+            if hasattr(self, 'wordRadio') and self.wordRadio.isChecked():
+                self.settings.setValue("format", "Word")
+            elif hasattr(self, 'excelRadio') and self.excelRadio.isChecked():
+                self.settings.setValue("format", "Excel")
+            elif hasattr(self, 'pdfMarkdownRadio') and self.pdfMarkdownRadio.isChecked():
+                self.settings.setValue("format", "PDF")
             
             if self.worker and self.worker.isRunning():
                 self.worker.quit()
