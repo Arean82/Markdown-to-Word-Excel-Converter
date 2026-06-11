@@ -1,100 +1,143 @@
-# core/mermaid/mermaid_renderer.py
-"""
-Pure Python Mermaid Renderer
-Supports multiple backends with Playwright as primary
-"""
+# logic/mermaid_renderer.py
+# Mermaid Renderer - Renders mermaid diagrams using Playwright
 
 import os
-import sys
 import tempfile
-import base64
-import subprocess
 from pathlib import Path
 from enum import Enum
-from typing import Optional, Union, List, Tuple
+from typing import Optional, Union
+
+from core.logger import Logger
+
 
 class MermaidFormat(Enum):
+    """Output formats for mermaid diagrams"""
     PNG = "png"
     SVG = "svg"
     PDF = "pdf"
     HTML = "html"
 
+
 class MermaidBackend(Enum):
-    PLAYWRIGHT = "playwright"  # Most reliable, renders full JS
-    SELENIUM = "selenium"       # Alternative browser automation
-    STATIC = "static"           # Only for simple diagrams
+    """Available rendering backends"""
+    MERMAID_PY = "mermaid_py"    # Fast, primary
+    PLAYWRIGHT = "playwright"     # Slower, fallback
+
 
 class MermaidRenderer:
-    """Pure Python mermaid diagram renderer"""
+    """Render mermaid diagrams using mermaid-py (fast) with Playwright fallback"""
     
-    def __init__(self, backend: MermaidBackend = MermaidBackend.PLAYWRIGHT):
+    def __init__(self, backend: MermaidBackend = MermaidBackend.MERMAID_PY):
         self.backend = backend
+        self.logger = Logger()
         self._playwright_available = None
-        self._selenium_available = None
+        self._mermaid_py_available = None
+    
+    def _check_mermaid_py(self) -> bool:
+        """Check if mermaid-py is available"""
+        if self._mermaid_py_available is not None:
+            return self._mermaid_py_available
         
+        try:
+            import mermaid
+            self._mermaid_py_available = True
+            self.logger.info("mermaid-py backend available (fast)")
+            return True
+        except ImportError:
+            self._mermaid_py_available = False
+            self.logger.warning("mermaid-py not installed")
+            return False
+    
     def _check_playwright(self) -> bool:
-        """Check if playwright is available"""
+        """Check if playwright is available (slower fallback)"""
         if self._playwright_available is not None:
             return self._playwright_available
         
         try:
             from playwright.sync_api import sync_playwright
             self._playwright_available = True
+            self.logger.info("Playwright backend available (fallback)")
             return True
         except ImportError:
             self._playwright_available = False
+            self.logger.warning("Playwright not installed")
             return False
     
-    def _check_selenium(self) -> bool:
-        """Check if selenium is available"""
-        if self._selenium_available is not None:
-            return self._selenium_available
-        
-        try:
-            import selenium
-            self._selenium_available = True
-            return True
-        except ImportError:
-            self._selenium_available = False
-            return False
-    
-    def render(self, mermaid_code: str, 
+    def render(self, 
+               mermaid_code: str,
                output_format: MermaidFormat = MermaidFormat.PNG,
                output_path: Optional[str] = None,
                width: int = 800,
                height: int = 600,
                theme: str = "default") -> Union[bytes, str]:
         """
-        Render mermaid diagram to specified format
-        
-        Args:
-            mermaid_code: Mermaid diagram code
-            output_format: Output format (PNG, SVG, PDF)
-            output_path: Optional output file path
-            width: Output width in pixels
-            height: Output height in pixels
-            theme: Theme (default, dark, forest, neutral)
-        
-        Returns:
-            bytes if output_path not specified, else file path
+        Render mermaid diagram using mermaid-py (fast) with Playwright fallback
         """
-        if self.backend == MermaidBackend.PLAYWRIGHT and self._check_playwright():
+        # Try mermaid-py first (faster)
+        if self.backend == MermaidBackend.MERMAID_PY and self._check_mermaid_py():
+            try:
+                return self._render_with_mermaid_py(
+                    mermaid_code, output_format, output_path, width, height, theme
+                )
+            except Exception as e:
+                self.logger.warning(f"mermaid-py render failed: {e}")
+                # Fallback to Playwright
+                if self._check_playwright():
+                    self.logger.info("Falling back to Playwright")
+                    return self._render_with_playwright(
+                        mermaid_code, output_format, output_path, width, height, theme
+                    )
+                raise
+        
+        # Try Playwright
+        if self._check_playwright():
             return self._render_with_playwright(
                 mermaid_code, output_format, output_path, width, height, theme
             )
-        elif self.backend == MermaidBackend.SELENIUM and self._check_selenium():
-            return self._render_with_selenium(
-                mermaid_code, output_format, output_path, width, height, theme
-            )
+        
+        raise Exception(
+            "No mermaid renderer available. Install mermaid-py (fast):\n"
+            "pip install mermaid-py\n\n"
+            "Or install playwright (fallback):\n"
+            "pip install playwright\n"
+            "playwright install chromium"
+        )
+    
+    def _render_with_mermaid_py(self, code, output_format, output_path, width, height, theme):
+        """Render using mermaid-py (fast)"""
+        import mermaid
+        
+        # Map theme
+        theme_map = {
+            'default': 'default',
+            'dark': 'dark',
+            'forest': 'forest',
+            'neutral': 'neutral'
+        }
+        mermaid_theme = theme_map.get(theme, 'default')
+        
+        if output_format == MermaidFormat.PNG:
+            img_data = mermaid.render(code, theme=mermaid_theme)
+            if output_path:
+                with open(output_path, 'wb') as f:
+                    f.write(img_data)
+                return output_path
+            return img_data
+        
+        elif output_format == MermaidFormat.SVG:
+            svg_data = mermaid.render(code, theme=mermaid_theme, format='svg')
+            if output_path:
+                with open(output_path, 'w', encoding='utf-8') as f:
+                    f.write(svg_data)
+                return output_path
+            return svg_data.encode('utf-8')
+        
         else:
-            raise Exception(
-                "No render backend available. Install playwright:\n"
-                "pip install playwright\n"
-                "playwright install chromium"
-            )
+            # For PDF/HTML, fallback to playwright
+            raise Exception(f"Format {output_format.value} not supported by mermaid-py, use Playwright")
     
     def _render_with_playwright(self, code, output_format, output_path, width, height, theme):
-        """Render using Playwright (headless Chromium)"""
+        """Render using Playwright (slower fallback)"""
         from playwright.sync_api import sync_playwright
         
         html_content = self._generate_mermaid_html(code, width, height, theme)
@@ -103,17 +146,15 @@ class MermaidRenderer:
             browser = p.chromium.launch(headless=True)
             page = browser.new_page(viewport={'width': width, 'height': height})
             
-            # Create temp HTML file
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False) as f:
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False, encoding='utf-8') as f:
                 f.write(html_content)
                 temp_html = f.name
             
             try:
                 page.goto(f'file://{temp_html}')
-                page.wait_for_selector('.mermaid svg', timeout=5000)
+                page.wait_for_selector('.mermaid svg', timeout=10000)
                 
                 if output_format == MermaidFormat.SVG:
-                    # Get SVG content
                     svg_content = page.locator('.mermaid').inner_html()
                     if output_path:
                         with open(output_path, 'w', encoding='utf-8') as f:
@@ -122,7 +163,6 @@ class MermaidRenderer:
                     return svg_content.encode('utf-8')
                 
                 elif output_format == MermaidFormat.PNG:
-                    # Screenshot
                     element = page.locator('.mermaid')
                     screenshot = element.screenshot()
                     if output_path:
@@ -132,7 +172,6 @@ class MermaidRenderer:
                     return screenshot
                 
                 elif output_format == MermaidFormat.PDF:
-                    # Generate PDF
                     pdf = page.pdf()
                     if output_path:
                         with open(output_path, 'wb') as f:
@@ -153,6 +192,8 @@ class MermaidRenderer:
     
     def _generate_mermaid_html(self, code: str, width: int, height: int, theme: str) -> str:
         """Generate HTML wrapper for mermaid diagram"""
+        bg_color = '#1e1e1e' if theme == 'dark' else '#ffffff'
+        
         return f"""<!DOCTYPE html>
 <html>
 <head>
@@ -162,7 +203,7 @@ class MermaidRenderer:
         body {{
             margin: 0;
             padding: 20px;
-            background-color: {'#1e1e1e' if theme == 'dark' else '#ffffff'};
+            background-color: {bg_color};
             display: flex;
             justify-content: center;
             align-items: center;
@@ -170,7 +211,7 @@ class MermaidRenderer:
         }}
         .mermaid {{
             width: {width}px;
-            height: {height}px;
+            min-height: {height}px;
         }}
     </style>
 </head>
@@ -193,7 +234,4 @@ class MermaidRenderer:
 </body>
 </html>"""
     
-    def render_to_base64(self, mermaid_code: str, width: int = 800, height: int = 600) -> str:
-        """Render diagram and return as base64 string (for embedding)"""
-        image_data = self.render(mermaid_code, MermaidFormat.PNG, width=width, height=height)
-        return base64.b64encode(image_data).decode('utf-8')
+    

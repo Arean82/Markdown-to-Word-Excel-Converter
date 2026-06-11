@@ -1,58 +1,30 @@
-import os
-import markdown
+# core/readme_viewer.py
+# README Viewer Dialog for Markdown Converter Application
+
+from PyQt6.QtWidgets import QDialog
+from PyQt6.uic import loadUi
 from pathlib import Path
-from PyQt6.QtWidgets import QDialog, QVBoxLayout, QTextBrowser, QPushButton
-from PyQt6.QtCore import Qt
+import markdown
+
 
 class ReadmeViewerDialog(QDialog):
+    """Dialog to display README documentation"""
+    
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("README - Markdown Converter")
-        self.resize(800, 600)
-        self.setModal(True)
         
-        layout = QVBoxLayout()
-        layout.setContentsMargins(10, 10, 10, 10)
+        # Load UI
+        ui_path = Path(__file__).parent.parent / 'ui' / 'readme_viewer.ui'
+        loadUi(str(ui_path), self)
         
-        # Text browser
-        self.text_browser = QTextBrowser()
-        self.text_browser.setStyleSheet("""
-            QTextBrowser {
-                background-color: #1a1a1a;
-                color: #d4d4d4;
-                border: 1px solid #3a3a3a;
-                border-radius: 4px;
-                font-family: Consolas, Menlo, monospace;
-                font-size: 12px;
-            }
-        """)
+        # Connect close button
+        self.closeBtn.clicked.connect(self.accept)
         
         # Load README
         self.load_readme()
-        
-        layout.addWidget(self.text_browser)
-        
-        # Close button
-        close_btn = QPushButton("Close")
-        close_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2b2b2b;
-                color: white;
-                border: none;
-                padding: 8px 16px;
-                border-radius: 4px;
-                min-width: 100px;
-            }
-            QPushButton:hover {
-                background-color: #3a3a3a;
-            }
-        """)
-        close_btn.clicked.connect(self.accept)
-        layout.addWidget(close_btn, alignment=Qt.AlignmentFlag.AlignCenter)
-        
-        self.setLayout(layout)
     
     def load_readme(self):
+        """Load and render README file"""
         base_dir = Path(__file__).parent.parent
         possible_names = ["README.md", "README", "Readme.md", "readme.md"]
         
@@ -79,7 +51,6 @@ class ReadmeViewerDialog(QDialog):
                                     fixed_lines.append('')
                         fixed_lines.append(line)
                     md_content = '\n'.join(fixed_lines)
-                    
                     html = markdown.markdown(md_content, extensions=["fenced_code", "tables"])
                     
                     # Wrap in styled HTML
@@ -90,7 +61,7 @@ class ReadmeViewerDialog(QDialog):
                             body {{
                                 font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial;
                                 margin: 40px;
-                                background-color: #1a1a1a;
+                                background-color: #1e1e1e;
                                 color: #ffffff;
                                 line-height: 1.6;
                             }}
@@ -110,7 +81,7 @@ class ReadmeViewerDialog(QDialog):
                     </html>
                     """
                     break
-                except Exception:
-                    pass
+                except Exception as e:
+                    content = f"Error loading README: {str(e)}"
         
-        self.text_browser.setHtml(content)
+        self.textBrowser.setHtml(content)

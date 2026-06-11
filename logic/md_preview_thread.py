@@ -1,17 +1,27 @@
-# preview_thread.py - Worker thread for generating markdown preview to keep UI responsive
-# This thread reads the markdown file, parses it to HTML, extracts tables info, and sends the data back to the preview dialog for display. It uses markdown extensions for better parsing and can optionally include syntax highlighting for code blocks.   
+# logic/md_preview_thread.py
+# Markdown Preview Thread - Worker thread for generating markdown preview
 
 from PyQt6.QtCore import QThread, pyqtSignal
 import markdown
 from markdown.extensions.codehilite import CodeHiliteExtension
-from markdown.extensions.fenced_code import FencedCodeExtension
 from bs4 import BeautifulSoup
 import pandas as pd
+import re
 
-class PreviewWorker(QThread):
-    """Worker thread for preview to keep UI responsive"""
-    preview_ready = pyqtSignal(dict)  # Emits preview data
+from core.logger import Logger
+
+
+class MarkdownPreviewThread(QThread):
+    """Worker thread for markdown preview to keep UI responsive"""
+    
+    preview_ready = pyqtSignal(dict)
     error = pyqtSignal(str)
+    
+    def __init__(self, file_path: str, use_highlighting: bool = True):
+        super().__init__()
+        self.file_path = file_path
+        self.use_highlighting = use_highlighting
+        self.logger = Logger()
     
     @staticmethod
     def fix_markdown_tables(content: str) -> str:
@@ -34,13 +44,8 @@ class PreviewWorker(QThread):
             
         return '\n'.join(fixed_lines)
 
-    
-    def __init__(self, file_path, use_highlighting=True):
-        super().__init__()
-        self.file_path = file_path
-        self.use_highlighting = use_highlighting
-    
     def run(self):
+        """Generate preview in background thread"""
         try:
             # Read file
             with open(self.file_path, 'r', encoding='utf-8') as f:
@@ -67,6 +72,11 @@ class PreviewWorker(QThread):
             
             html_content = markdown.markdown(raw_content, extensions=extensions)
             
+            # Check for mermaid diagrams
+            mermaid_pattern = r'```mermaid\s*\n.*?\n```'
+            has_mermaid = bool(re.search(mermaid_pattern, raw_content, re.DOTALL))
+            mermaid_count = len(re.findall(mermaid_pattern, raw_content, re.DOTALL))
+            
             # Extract tables info
             soup = BeautifulSoup(html_content, 'html.parser')
             tables = soup.find_all('table')
@@ -76,7 +86,8 @@ class PreviewWorker(QThread):
                 try:
                     df = pd.read_html(str(table))[0]
                     table_info.append(f"Table {i}: {df.shape[0]} rows × {df.shape[1]} columns")
-                except:
+                except Exception as e:
+                    self.logger.warning(f"Failed to parse table {i}: {str(e)}")
                     table_info.append(f"Table {i}: (unable to parse)")
             
             # Prepare preview data
@@ -84,6 +95,8 @@ class PreviewWorker(QThread):
                 'raw': raw_content,
                 'html': html_content,
                 'tables': table_info,
+                'has_mermaid': has_mermaid,
+                'mermaid_count': mermaid_count,
                 'stats': {
                     'lines': len(raw_content.split('\n')),
                     'chars': len(raw_content),
@@ -92,6 +105,8 @@ class PreviewWorker(QThread):
             }
             
             self.preview_ready.emit(preview_data)
+            self.logger.info(f"Markdown preview generated for: {self.file_path}")
             
         except Exception as e:
+            self.logger.error(f"Markdown preview error: {str(e)}")
             self.error.emit(str(e))

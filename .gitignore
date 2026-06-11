@@ -1,5 +1,4 @@
 /setup.py
-/__pycache__
-logs/*.log
+__pycache__/
 logs/*
-core/__pycache__/
+.vscode/

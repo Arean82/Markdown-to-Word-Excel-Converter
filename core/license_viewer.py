@@ -1,8 +1,14 @@
-from PyQt6.QtWidgets import QDialog, QMessageBox
+# core/license_viewer.py
+# License Viewer Dialog for Markdown Converter Application
+
+from PyQt6.QtWidgets import QDialog
 from PyQt6.uic import loadUi
 from pathlib import Path
 
+
 class LicenseViewerDialog(QDialog):
+    """Dialog to display license information"""
+    
     def __init__(self, parent=None):
         super().__init__(parent)
         
@@ -13,10 +19,11 @@ class LicenseViewerDialog(QDialog):
         # Connect close button
         self.closeBtn.clicked.connect(self.accept)
         
-        # Load license text from file
+        # Load license text
         self.load_license()
     
     def load_license(self):
+        """Load LICENSE file content"""
         license_path = Path(__file__).parent.parent / 'LICENSE'
         
         if license_path.exists():

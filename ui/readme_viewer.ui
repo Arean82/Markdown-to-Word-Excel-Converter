@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>LogViewerDialog</class>
- <widget class="QDialog" name="LogViewerDialog">
+ <class>ReadmeViewerDialog</class>
+ <widget class="QDialog" name="ReadmeViewerDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>500</height>
+    <height>600</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Application Logs</string>
+   <string>README</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <property name="spacing">
@@ -31,22 +31,16 @@
    </property>
    
    <item>
-    <widget class="QTextEdit" name="logTextEdit">
-     <property name="font">
-      <font>
-       <family>Consolas</family>
-      </font>
-     </property>
-     <property name="readOnly">
-      <bool>true</bool>
-     </property>
+    <widget class="QTextBrowser" name="textBrowser">
      <property name="styleSheet">
       <string>
-       QTextEdit {
+       QTextBrowser {
            background-color: #1e1e1e;
            color: #d4d4d4;
            border: 1px solid #3a3a3a;
            border-radius: 4px;
+           font-family: Consolas, Menlo, monospace;
+           font-size: 12px;
        }
       </string>
      </property>
@@ -54,21 +48,7 @@
    </item>
    
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout">
-     <item>
-      <widget class="QPushButton" name="refreshBtn">
-       <property name="text">
-        <string>Refresh</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="clearBtn">
-       <property name="text">
-        <string>Clear Logs</string>
-       </property>
-      </widget>
-     </item>
+    <layout class="QHBoxLayout" name="buttonLayout">
      <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
@@ -86,6 +66,21 @@
       <widget class="QPushButton" name="closeBtn">
        <property name="text">
         <string>Close</string>
+       </property>
+       <property name="styleSheet">
+        <string>
+         QPushButton {
+             background-color: #0d6efd;
+             color: white;
+             border: none;
+             padding: 8px 16px;
+             border-radius: 4px;
+             min-width: 100px;
+         }
+         QPushButton:hover {
+             background-color: #0b5ed7;
+         }
+        </string>
        </property>
       </widget>
      </item>

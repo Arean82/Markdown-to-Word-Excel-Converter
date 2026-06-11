@@ -6,43 +6,64 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>700</width>
-    <height>500</height>
+    <width>800</width>
+    <height>600</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Markdown Preview</string>
+   <string>Preview</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="spacing">
+    <number>10</number>
+   </property>
+   <property name="leftMargin">
+    <number>10</number>
+   </property>
+   <property name="topMargin">
+    <number>10</number>
+   </property>
+   <property name="rightMargin">
+    <number>10</number>
+   </property>
+   <property name="bottomMargin">
+    <number>10</number>
+   </property>
+   
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
       <number>0</number>
      </property>
+     
+     <!-- Raw Markdown Tab -->
      <widget class="QWidget" name="rawTab">
       <attribute name="title">
        <string>Raw Markdown</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_2">
+      <layout class="QVBoxLayout" name="rawLayout">
        <item>
         <widget class="QTextEdit" name="rawTextEdit">
-         <property name="font">
-          <font>
-           <family>Consolas,Monaco,monospace</family>
-          </font>
-         </property>
          <property name="readOnly">
           <bool>true</bool>
+         </property>
+         <property name="font">
+          <font>
+           <family>Consolas</family>
+           <pointsize>10</pointsize>
+          </font>
          </property>
         </widget>
        </item>
       </layout>
      </widget>
+     
+     <!-- Rendered HTML Tab -->
      <widget class="QWidget" name="htmlTab">
       <attribute name="title">
        <string>Rendered Preview</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_3">
+      <layout class="QVBoxLayout" name="htmlLayout">
        <item>
         <widget class="QTextEdit" name="htmlTextEdit">
          <property name="readOnly">
@@ -52,15 +73,17 @@
        </item>
       </layout>
      </widget>
+     
+     <!-- Tables Tab -->
      <widget class="QWidget" name="tablesTab">
       <attribute name="title">
-       <string>Detected Tables</string>
+       <string>Tables</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_4">
+      <layout class="QVBoxLayout" name="tablesLayout">
        <item>
         <widget class="QLabel" name="tablesLabel">
          <property name="text">
-          <string>Tables found in markdown will be listed here</string>
+          <string>Tables found in markdown</string>
          </property>
         </widget>
        </item>
@@ -69,12 +92,79 @@
        </item>
       </layout>
      </widget>
+     
+     <!-- Mermaid Tab -->
+     <widget class="QWidget" name="mermaidTab">
+      <attribute name="title">
+       <string>Mermaid Diagrams</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="mermaidLayout">
+       <item>
+        <widget class="QLabel" name="mermaidInfoLabel">
+         <property name="text">
+          <string>Mermaid diagrams in this file</string>
+         </property>
+         <property name="styleSheet">
+          <string>color: #888; padding: 5px;</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="mermaidControlsLayout">
+         <item>
+          <widget class="QComboBox" name="diagramSelector">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="minimumWidth">
+            <number>200</number>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="exportBtn">
+           <property name="text">
+            <string>Export Diagram</string>
+           </property>
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QLabel" name="mermaidPreviewLabel">
+         <property name="alignment">
+          <set>Qt::AlignmentFlag::AlignCenter</set>
+         </property>
+         <property name="styleSheet">
+          <string>background-color: #1e1e1e; border: 1px solid #3a3a3a; border-radius: 4px; min-height: 300px;</string>
+         </property>
+         <property name="text">
+          <string>No diagram selected</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="mermaidStatusLabel">
+         <property name="text">
+          <string>Ready</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignmentFlag::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
+   
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="orientation">
-      <enum>Qt::Horizontal</enum>
+      <enum>Qt::Orientation::Horizontal</enum>
      </property>
      <property name="standardButtons">
       <set>QDialogButtonBox::Close</set>
@@ -85,22 +175,6 @@
  </widget>
  <resources/>
  <connections>
-  <connection>
-   <sender>buttonBox</sender>
-   <signal>accepted()</signal>
-   <receiver>PreviewDialog</receiver>
-   <slot>accept()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>157</x>
-     <y>274</y>
-    </hint>
-   </hints>
-  </connection>
   <connection>
    <sender>buttonBox</sender>
    <signal>rejected()</signal>

@@ -1,9 +1,17 @@
+# core/log_viewer.py
+# This module defines the LogViewerDialog class, which provides a user interface for viewing and managing application logs. 
+# Log Viewer - Dialog to view and manage application logs
+
 from PyQt6.QtWidgets import QDialog, QMessageBox
 from PyQt6.uic import loadUi
 from pathlib import Path
+
 from core.logger import Logger
 
+
 class LogViewerDialog(QDialog):
+    """Dialog to view and manage application logs"""
+    
     def __init__(self, parent=None):
         super().__init__(parent)
         
@@ -20,10 +28,12 @@ class LogViewerDialog(QDialog):
         self.refresh_logs()
     
     def refresh_logs(self):
+        """Refresh log display"""
         logger = Logger()
         self.logTextEdit.setText(logger.get_log_content())
     
     def clear_logs(self):
+        """Clear all logs after confirmation"""
         reply = QMessageBox.question(
             self,
             "Clear Logs",
