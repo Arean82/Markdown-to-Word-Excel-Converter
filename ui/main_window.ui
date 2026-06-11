@@ -171,6 +171,12 @@
            <property name="enabled">
             <bool>false</bool>
            </property>
+           <property name="minimumSize">
+            <size>
+             <width>120</width>
+             <height>40</height>
+            </size>
+           </property>
            <property name="font">
             <font>
              <pointsize>11</pointsize>
@@ -178,7 +184,7 @@
             </font>
            </property>
            <property name="styleSheet">
-            <string>QPushButton { background-color: #28a745; border-radius: 4px; padding: 10px 30px; } QPushButton:hover { background-color: #218838; } QPushButton:disabled { background-color: #6c757d; }</string>
+            <string>QPushButton { background-color: #28a745; color: white; border-radius: 4px; padding: 10px 30px; } QPushButton:hover { background-color: #218838; } QPushButton:disabled { background-color: #6c757d; color: #e0e0e0; }</string>
            </property>
            <property name="text">
             <string>🚀 Convert to Word/Excel</string>
