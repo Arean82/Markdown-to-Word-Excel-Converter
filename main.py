@@ -13,8 +13,34 @@ from PyQt6.QtWidgets import QApplication
 from PyQt6.QtGui import QIcon
 from core.main_window import MainWindow
 
+import urllib.request
+
+def download_badges():
+    """Download shields.io badges to assets folder if they don't exist"""
+    assets_dir = Path(__file__).parent / 'assets'
+    assets_dir.mkdir(exist_ok=True)
+    
+    badges = {
+        'badge_python.svg': 'https://img.shields.io/badge/python-3.8+-blue.svg',
+        'badge_pyqt6.svg': 'https://img.shields.io/badge/UI-PyQt6-brightgreen.svg',
+        'badge_platform.svg': 'https://img.shields.io/badge/platform-Windows-lightgrey.svg',
+        'badge_license.svg': 'https://img.shields.io/badge/license-MIT-green.svg'
+    }
+    
+    for filename, url in badges.items():
+        filepath = assets_dir / filename
+        if not filepath.exists():
+            try:
+                req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+                with urllib.request.urlopen(req) as response:
+                    filepath.write_bytes(response.read())
+            except Exception as e:
+                print(f"Failed to download {filename}: {e}")
+
 def main():
     """Application entry point"""
+    download_badges()
+    
     app = QApplication(sys.argv)
     from PyQt6.QtWidgets import QStyleFactory
     if 'Fusion' in QStyleFactory.keys():

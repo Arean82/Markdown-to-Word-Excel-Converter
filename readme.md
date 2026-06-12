@@ -1,6 +1,8 @@
 
 # Markdown to Word/Excel Converter
 
+![Python](assets/badge_python.svg)  ![PyQt6](assets/badge_pyqt6.svg)  ![Platform](assets/badge_platform.svg)  ![License](assets/badge_license.svg)
+
 A professional PyQt6 desktop application designed to bridge the gap between Markdown documentation and office formats. It uses a high-fidelity "Combo" engine to preserve complex table structures that standard converters miss.
 
 ## 🚀 Key Features
@@ -43,6 +45,19 @@ pip install -r requirements.txt
 ```
 
 *(Note: For the PDF feature on Windows, WeasyPrint requires the GTK3 runtime. If you encounter missing DLL errors, please install the [GTK3 Runtime for Windows](https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer/releases) and ensure it is added to your PATH.)*
+
+## Building the Executable
+
+If you want to package the application into a standalone executable (no Python installation required for the end user):
+
+1. Ensure you have PyInstaller installed (`pip install pyinstaller`).
+2. Run the build command using the provided `.spec` file:
+   ```bash
+   pyinstaller md_converter.spec
+   ```
+3. The standalone application will be generated in the `dist/md_converter/` directory.
+
+*(Note: Windows users running the executable still need to install the GTK3 runtime for PDF conversion to work.)*
 
 ## Usage
 

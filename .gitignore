@@ -3,3 +3,10 @@ __pycache__/
 logs/*
 .vscode/
 config.ini
+
+# PyInstaller
+build/
+dist/
+
+# Python
+*.pyc
