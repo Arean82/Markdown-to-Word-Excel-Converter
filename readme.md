@@ -48,16 +48,22 @@ pip install -r requirements.txt
 
 ## Building the Executable
 
-If you want to package the application into a standalone executable (no Python installation required for the end user):
+If you want to package the application into a standalone executable (no Python installation required for the end user), you have two options depending on your preference for startup speed vs portability:
 
 1. Ensure you have PyInstaller installed (`pip install pyinstaller`).
-2. Run the build command using the provided `.spec` file:
+2. **Option 1: One Directory (Faster Startup)**
    ```bash
-   pyinstaller md_converter.spec
+   pyinstaller md_converter_onedir.spec
    ```
-3. The standalone application will be generated in the `dist/md_converter/` directory.
+   This generates a folder at `dist/md_converter_onedir/` containing the executable and all required dependencies.
 
-*(Note: Windows users running the executable still need to install the GTK3 runtime for PDF conversion to work.)*
+3. **Option 2: One File (More Portable)**
+   ```bash
+   pyinstaller md_converter_onefile.spec
+   ```
+   This generates a single executable at `dist/md_converter_onefile.exe`. *(Note: single-file executables take slightly longer to launch because they extract contents to a temporary folder).*
+
+*(Note: Windows users running either executable still need to install the GTK3 runtime for PDF conversion to work.)*
 
 ## Usage
 
