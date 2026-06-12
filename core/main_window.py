@@ -133,8 +133,11 @@ class MainWindow(QMainWindow):
         self.actionReadme = QAction("Readme", self)
         self.actionReadme.triggered.connect(self.show_readme)
         
-        # Initially hide mermaid section
-        self.mermaidGroup.setVisible(False)
+        # Initially show markdown section in stacked widget
+        if hasattr(self, 'stackedWidget'):
+            self.stackedWidget.setCurrentIndex(0)
+        else:
+            self.mermaidGroup.setVisible(False)
 
         # Setup menu
         self.setup_menu()
@@ -302,6 +305,20 @@ class MainWindow(QMainWindow):
         )
         
         if not file_paths:
+            return
+            
+        # Validate that the user didn't select a mix of Markdown and Mermaid files
+        has_md = False
+        has_mermaid = False
+        for fp in file_paths:
+            ext = Path(fp).suffix.lower()
+            if ext in {'.md', '.markdown'}:
+                has_md = True
+            elif ext in {'.mermaid', '.mmd'}:
+                has_mermaid = True
+                
+        if has_md and has_mermaid:
+            QMessageBox.warning(self, "Invalid Selection", "You cannot mix Markdown and Mermaid files in the same batch. Please select only one file type.")
             return
             
         self.last_path = str(Path(file_paths[0]).parent)
@@ -515,12 +532,18 @@ class MainWindow(QMainWindow):
     def show_correct_section(self):
         """Show appropriate section based on file type"""
         if self.current_file_type == 'markdown':
-            self.mdGroup.setVisible(True)
-            self.mermaidGroup.setVisible(False)
+            if hasattr(self, 'stackedWidget'):
+                self.stackedWidget.setCurrentIndex(0)
+            else:
+                self.mdGroup.setVisible(True)
+                self.mermaidGroup.setVisible(False)
             self.convertBtn.setEnabled(True)
         elif self.current_file_type == 'mermaid':
-            self.mdGroup.setVisible(False)
-            self.mermaidGroup.setVisible(True)
+            if hasattr(self, 'stackedWidget'):
+                self.stackedWidget.setCurrentIndex(1)
+            else:
+                self.mdGroup.setVisible(False)
+                self.mermaidGroup.setVisible(True)
             self.convertBtn.setEnabled(False)
             if hasattr(self, 'exportDiagramBtn'):
                 self.exportDiagramBtn.setEnabled(True)

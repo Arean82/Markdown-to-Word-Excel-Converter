@@ -134,346 +134,411 @@
      </widget>
     </item>
     <item>
-     <widget class="QGroupBox" name="mdGroup">
-      <property name="title">
-       <string>📝 Markdown Conversion</string>
+     <widget class="QStackedWidget" name="stackedWidget">
+      <property name="currentIndex">
+       <number>0</number>
       </property>
-      <layout class="QVBoxLayout" name="mdLayout">
-       <item>
-        <layout class="QHBoxLayout" name="conversionLayout">
-         <item>
-          <widget class="QRadioButton" name="wordRadio">
-           <property name="text">
-            <string>Word (.docx)</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QRadioButton" name="excelRadio">
-           <property name="text">
-            <string>Excel (.xlsx)</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QRadioButton" name="pdfMarkdownRadio">
-           <property name="text">
-            <string>PDF (.pdf)</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="rightSpacer">
-           <property name="orientation">
-            <enum>Qt::Orientation::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="highlightCheck">
-           <property name="text">
-            <string>🎨 Syntax highlighting (Word/PDF only)</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="wordSettingsLayout">
-         <item>
-          <widget class="QLabel" name="paperLabel">
-           <property name="text">
-            <string>Paper:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="paperSizeCombo">
+      <widget class="QWidget" name="page">
+       <layout class="QVBoxLayout" name="pageLayout">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QGroupBox" name="mdGroup">
+          <property name="title">
+           <string>📝 Markdown Conversion</string>
+          </property>
+          <layout class="QVBoxLayout" name="mdLayout">
            <item>
-            <property name="text">
-             <string>A4</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Letter</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Legal</string>
-            </property>
-           </item>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_2">
-           <property name="orientation">
-            <enum>Qt::Orientation::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item>
-          <widget class="QLabel" name="orientationLabel">
-           <property name="text">
-            <string>Orientation:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="orientationCombo">
-           <item>
-            <property name="text">
-             <string>Portrait</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Landscape</string>
-            </property>
-           </item>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer">
-           <property name="orientation">
-            <enum>Qt::Orientation::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item>
-          <widget class="QLabel" name="marginLabel">
-           <property name="text">
-            <string>Margin:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="marginCombo">
-           <item>
-            <property name="text">
-             <string>Normal</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Narrow</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Wide</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Custom</string>
-            </property>
-           </item>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="convertActionLayout">
-         <item>
-          <layout class="QVBoxLayout" name="verticalLayout_2">
-           <item>
-            <layout class="QGridLayout" name="gridLayout">
-             <item row="0" column="3">
-              <widget class="QDoubleSpinBox" name="doubleSpinBox_3"/>
-             </item>
-             <item row="0" column="1">
-              <widget class="QDoubleSpinBox" name="doubleSpinBox"/>
-             </item>
-             <item row="1" column="3">
-              <widget class="QDoubleSpinBox" name="doubleSpinBox_2"/>
-             </item>
-             <item row="1" column="1">
-              <widget class="QDoubleSpinBox" name="doubleSpinBox_4"/>
-             </item>
-             <item row="1" column="2">
-              <widget class="QLabel" name="label_4">
+            <layout class="QHBoxLayout" name="conversionLayout">
+             <item>
+              <widget class="QRadioButton" name="wordRadio">
                <property name="text">
-                <string>Right:</string>
+                <string>Word (.docx)</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
                </property>
               </widget>
              </item>
-             <item row="0" column="0">
-              <widget class="QLabel" name="label">
+             <item>
+              <widget class="QRadioButton" name="excelRadio">
                <property name="text">
-                <string>Top:</string>
+                <string>Excel (.xlsx)</string>
                </property>
               </widget>
              </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="label_2">
+             <item>
+              <widget class="QRadioButton" name="pdfMarkdownRadio">
                <property name="text">
-                <string>Bottom:</string>
+                <string>PDF (.pdf)</string>
                </property>
               </widget>
              </item>
-             <item row="0" column="2">
-              <widget class="QLabel" name="label_3">
+             <item>
+              <spacer name="rightSpacer">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="highlightCheck">
                <property name="text">
-                <string>Left :</string>
+                <string>🎨 Syntax highlighting (Word/PDF only)</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="wordSettingsLayout">
+             <item>
+              <widget class="QLabel" name="paperLabel">
+               <property name="text">
+                <string>Paper:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="paperSizeCombo">
+               <item>
+                <property name="text">
+                 <string>A4</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Letter</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Legal</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_2">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QLabel" name="orientationLabel">
+               <property name="text">
+                <string>Orientation:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="orientationCombo">
+               <item>
+                <property name="text">
+                 <string>Portrait</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Landscape</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QLabel" name="marginLabel">
+               <property name="text">
+                <string>Margin:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="marginCombo">
+               <item>
+                <property name="text">
+                 <string>Normal</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Narrow</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Wide</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Custom</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="convertActionLayout">
+             <item>
+              <layout class="QVBoxLayout" name="verticalLayout_2">
+               <item>
+                <layout class="QGridLayout" name="gridLayout">
+                 <item row="0" column="3">
+                  <widget class="QDoubleSpinBox" name="doubleSpinBox_3"/>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QDoubleSpinBox" name="doubleSpinBox"/>
+                 </item>
+                 <item row="1" column="3">
+                  <widget class="QDoubleSpinBox" name="doubleSpinBox_2"/>
+                 </item>
+                 <item row="1" column="1">
+                  <widget class="QDoubleSpinBox" name="doubleSpinBox_4"/>
+                 </item>
+                 <item row="1" column="2">
+                  <widget class="QLabel" name="label_4">
+                   <property name="text">
+                    <string>Right:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="label">
+                   <property name="text">
+                    <string>Top:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="label_2">
+                   <property name="text">
+                    <string>Bottom:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="2">
+                  <widget class="QLabel" name="label_3">
+                   <property name="text">
+                    <string>Left :</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="checkBox">
+               <property name="text">
+                <string>Inches</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="convertSpacer">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QPushButton" name="convertBtn">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>220</width>
+                 <height>45</height>
+                </size>
+               </property>
+               <property name="font">
+                <font>
+                 <family>Segoe UI Historic</family>
+                 <pointsize>10</pointsize>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="mouseTracking">
+                <bool>true</bool>
+               </property>
+               <property name="text">
+                <string>🚀 Convert to 
+Word/Excel/PDF</string>
                </property>
               </widget>
              </item>
             </layout>
            </item>
           </layout>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="checkBox">
-           <property name="text">
-            <string>Inches</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="convertSpacer">
-           <property name="orientation">
-            <enum>Qt::Orientation::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item>
-          <widget class="QPushButton" name="convertBtn">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>220</width>
-             <height>45</height>
-            </size>
-           </property>
-           <property name="font">
-            <font>
-             <family>Segoe UI Historic</family>
-             <pointsize>10</pointsize>
-             <bold>true</bold>
-            </font>
-           </property>
-           <property name="mouseTracking">
-            <bool>true</bool>
-           </property>
-           <property name="text">
-            <string>🚀 Convert to 
-Word/Excel/PDF</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-      </layout>
-     </widget>
-    </item>
-    <item>
-     <widget class="QGroupBox" name="mermaidGroup">
-      <property name="title">
-       <string>🎨 Mermaid Export</string>
-      </property>
-      <layout class="QVBoxLayout" name="mermaidLayout">
-       <item>
-        <layout class="QHBoxLayout" name="exportLayout">
-         <item>
-          <widget class="QLabel" name="formatLabel">
-           <property name="text">
-            <string>Export as:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QRadioButton" name="pngRadio">
-           <property name="text">
-            <string>PNG</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QRadioButton" name="svgRadio">
-           <property name="text">
-            <string>SVG</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QRadioButton" name="pdfRadio">
-           <property name="text">
-            <string>PDF</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="exportSpacer">
-           <property name="orientation">
-            <enum>Qt::Orientation::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item>
-          <widget class="QPushButton" name="exportDiagramBtn">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="font">
-            <font>
-             <pointsize>12</pointsize>
-             <bold>true</bold>
-            </font>
-           </property>
-           <property name="styleSheet">
-            <string>QPushButton { background-color: #0d6efd; border-radius: 4px; padding: 10px 30px; } QPushButton:hover { background-color: #0b5ed7; } QPushButton:disabled { background-color: #6c757d; }</string>
-           </property>
-           <property name="text">
-            <string>💾 Export Diagram</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-      </layout>
+         </widget>
+        </item>
+        <item>
+         <spacer name="verticalSpacer1">
+          <property name="orientation">
+           <enum>Qt::Orientation::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="page_2">
+       <layout class="QVBoxLayout" name="page2Layout">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QGroupBox" name="mermaidGroup">
+          <property name="title">
+           <string>🎨 Mermaid Export</string>
+          </property>
+          <layout class="QVBoxLayout" name="mermaidLayout">
+           <item>
+            <layout class="QHBoxLayout" name="exportLayout">
+             <item>
+              <widget class="QLabel" name="formatLabel">
+               <property name="text">
+                <string>Export as:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="pngRadio">
+               <property name="text">
+                <string>PNG</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="svgRadio">
+               <property name="text">
+                <string>SVG</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="pdfRadio">
+               <property name="text">
+                <string>PDF</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="exportSpacer">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QPushButton" name="exportDiagramBtn">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="font">
+                <font>
+                 <pointsize>12</pointsize>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="styleSheet">
+                <string>QPushButton { background-color: #0d6efd; border-radius: 4px; padding: 10px 30px; } QPushButton:hover { background-color: #0b5ed7; } QPushButton:disabled { background-color: #6c757d; }</string>
+               </property>
+               <property name="text">
+                <string>💾 Export Diagram</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <spacer name="verticalSpacer2">
+          <property name="orientation">
+           <enum>Qt::Orientation::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
      </widget>
     </item>
     <item>

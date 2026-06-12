@@ -55,13 +55,13 @@ If you want to package the application into a standalone executable (no Python i
    ```bash
    pyinstaller md_converter_onedir.spec
    ```
-   This generates a folder at `dist/md_converter_onedir/` containing the executable and all required dependencies.
+   This generates a folder at `dist/md_converter_onedir/` containing the `MD Converter.exe` executable and all required dependencies.
 
 3. **Option 2: One File (More Portable)**
    ```bash
    pyinstaller md_converter_onefile.spec
    ```
-   This generates a single executable at `dist/md_converter_onefile.exe`. *(Note: single-file executables take slightly longer to launch because they extract contents to a temporary folder).*
+   This generates a single executable located at `dist/md_converter_onefile/MD Converter.exe`. *(Note: single-file executables take slightly longer to launch because they extract contents to a temporary folder).*
 
 *(Note: Windows users running either executable still need to install the GTK3 runtime for PDF conversion to work.)*
 
@@ -72,15 +72,24 @@ If you want to package the application into a standalone executable (no Python i
 python main.py
 ```
 
-2. Click "Select Files" to grab one or more Markdown/Mermaid files.
+2. Click "Select Files" to grab one or more Markdown (`.md`) or Mermaid (`.mermaid`, `.mmd`) files.
+   *(Note: You cannot mix Markdown and Mermaid files in the same batch. Please select only one file type at a time.)*
 3. Your selected files will neatly populate the **Selected Files** list.
-4. Choose conversion type:
-   - **Word (.docx)** - Converts entire document with page formatting
-   - **Excel (.xlsx)** - Extracts tables with formatting
-   - **PDF (.pdf)** - Converts document into a styled PDF
-5. Customize page format: Select your preferred Paper Size, Orientation, and Margins.
-6. Toggle syntax highlighting if needed.
-7. Click "Convert" – the app will automatically batch-process every file in your list!
+4. The application features a dynamic interface that automatically adapts to your file selection:
+
+   **If you selected Markdown Files:**
+   - Choose your conversion type:
+     - **Word (.docx)** - Converts entire document with page formatting
+     - **Excel (.xlsx)** - Extracts tables with formatting
+     - **PDF (.pdf)** - Converts document into a styled PDF
+   - Customize page format: Select your preferred Paper Size, Orientation, and Margins.
+   - Toggle syntax highlighting if needed.
+   - Click "Convert" – the app will automatically batch-process every file in your list!
+
+   **If you selected Mermaid Files:**
+   - The UI will automatically switch to the **Mermaid Export** panel.
+   - Select your desired output format (**PNG, SVG, or PDF**).
+   - Click "Export Diagram" to render and save your visual flowchart or diagram.
 
 ### Interactive Preview
 - Highlight any file in your list and click "👁️ Preview Selected"

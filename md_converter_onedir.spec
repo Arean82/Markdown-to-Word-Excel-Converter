@@ -35,7 +35,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='md_converter_onedir',
+    name='MD Converter',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -46,6 +46,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    version='version_info.txt',
     icon='assets/icon.png',
 )
 
