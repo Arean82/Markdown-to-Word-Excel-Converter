@@ -7,7 +7,7 @@ A professional PyQt6 desktop application designed to bridge the gap between Mark
 
 - 📦 **Batch Conversion** – Select multiple Markdown files and convert them all simultaneously to your target format.
 - 📄 **Word Conversion** – Full document flow using pypandoc_binary, enhanced with `python-docx` for customizable page formatting (Size, Orientation, Margins).
-- 📑 **PDF Conversion** – Generates beautiful, styled PDFs instantly using Playwright, preserving your selected page formatting.
+- 📑 **PDF Conversion** – Generates beautiful, styled PDFs instantly using WeasyPrint, preserving your selected page formatting and gracefully breaking complex tables across pages.
 - 📊 **Powerhouse Excel Engine** – 
   - **Merged Cell Support**: Full rowspan and colspan mapping.
   - **Rich Formatting**: Preserves bold, italic, and text alignment.
@@ -42,7 +42,7 @@ Unlike "lightweight" converters, this app uses a multi-stage pipeline to ensure 
 pip install -r requirements.txt
 ```
 
-*(Note: For the PDF feature, you may need to run `playwright install chromium` once to download the headless browser engine)*
+*(Note: For the PDF feature on Windows, WeasyPrint requires the GTK3 runtime. If you encounter missing DLL errors, please install the [GTK3 Runtime for Windows](https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer/releases) and ensure it is added to your PATH.)*
 
 ## Usage
 
@@ -89,7 +89,7 @@ PyQt6              - GUI framework
 qt-material        - Beautiful modern UI themes
 pypandoc_binary    - Markdown to Word conversion
 python-docx        - Word document formatting (Margins, Size, Orientation)
-playwright         - Markdown to PDF conversion engine
+weasyprint         - Markdown to PDF conversion engine (handles print CSS natively)
 openpyxl           - Excel file writing with high-fidelity formatting
 markdown           - Markdown to HTML conversion
 beautifulsoup4     - HTML parsing for table extraction

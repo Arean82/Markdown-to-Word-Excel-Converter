@@ -71,10 +71,10 @@ class ConversionWorker(QThread):
             self.finished.emit(False, str(e))
     
     def convert_to_pdf(self):
-        """Convert markdown to PDF using Pandoc (HTML) + Playwright"""
+        """Convert markdown to PDF using Pandoc (HTML) + WeasyPrint"""
         try:
             import pypandoc
-            from playwright.sync_api import sync_playwright
+            from weasyprint import HTML, CSS
             
             self.logger.info(f"Starting PDF conversion: {self.input_file}")
             self.status.emit("Converting Markdown to HTML...")
@@ -100,58 +100,66 @@ class ConversionWorker(QThread):
                 if os.path.exists(temp_md):
                     os.unlink(str(temp_md))
                     
-            # Inject CSS to remove unwanted spacing at the top of the document and fix tables
-            css_fix = """<style>
-            body { margin-top: 0 !important; padding-top: 0 !important; }
-            body > *:first-child { margin-top: 0 !important; padding-top: 0 !important; }
-            table { width: 100% !important; max-width: 100% !important; table-layout: fixed !important; word-wrap: break-word !important; overflow-wrap: break-word !important; }
-            th, td { word-break: break-word !important; white-space: normal !important; overflow: hidden !important; }
-            </style></head>"""
-            html_content = html_content.replace("</head>", css_fix)
-            
-            self.status.emit("Rendering PDF with Playwright...")
+            self.status.emit("Rendering PDF with WeasyPrint...")
             self.progress.emit(60)
             
             # Map margins
             if self.margin == "Custom":
                 unit = "in" if self.custom_margins.get("is_inch", False) else "cm"
-                margin_dict = {
-                    "top": f"{self.custom_margins.get('top', 2.54)}{unit}",
-                    "right": f"{self.custom_margins.get('right', 2.54)}{unit}",
-                    "bottom": f"{self.custom_margins.get('bottom', 2.54)}{unit}",
-                    "left": f"{self.custom_margins.get('left', 2.54)}{unit}"
-                }
+                top = f"{self.custom_margins.get('top', 2.54)}{unit}"
+                right = f"{self.custom_margins.get('right', 2.54)}{unit}"
+                bottom = f"{self.custom_margins.get('bottom', 2.54)}{unit}"
+                left = f"{self.custom_margins.get('left', 2.54)}{unit}"
             else:
-                margin_px = "1in"
-                if self.margin == "Narrow": margin_px = "0.5in"
-                elif self.margin == "Wide": margin_px = "2in"
-                
-                margin_dict = {
-                    "top": margin_px, "right": margin_px, "bottom": margin_px, "left": margin_px
-                }
+                margin_val = "1in"
+                if self.margin == "Narrow": margin_val = "0.5in"
+                elif self.margin == "Wide": margin_val = "2in"
+                top = right = bottom = left = margin_val
             
-            with sync_playwright() as p:
-                browser = p.chromium.launch(headless=True)
-                page = browser.new_page()
-                page.set_content(html_content)
-                # Ensure the page formatting applies correctly
-                page.pdf(
-                    path=self.output_file,
-                    format=self.paper_size,
-                    landscape=(self.orientation == "Landscape"),
-                    margin=margin_dict,
-                    print_background=True
-                )
-                browser.close()
+            orientation_str = "landscape" if self.orientation == "Landscape" else "portrait"
+            
+            # Inject CSS for page formatting and table rules
+            css_fix = f"""<style>
+            @page {{
+                size: {self.paper_size} {orientation_str};
+                margin: {top} {right} {bottom} {left};
+            }}
+            body {{ margin-top: 0 !important; padding-top: 0 !important; font-family: sans-serif; }}
+            table {{ 
+                width: 100%; 
+                max-width: 100%; 
+                table-layout: auto; 
+                font-size: 8pt; 
+                border-collapse: collapse;
+                page-break-inside: auto;
+            }}
+            tr {{ 
+                page-break-inside: avoid; 
+                page-break-after: auto; 
+            }}
+            th, td {{ 
+                word-break: break-word; 
+                overflow-wrap: break-word; 
+                white-space: normal; 
+                border: 1px solid #ddd;
+                padding: 4px;
+            }}
+            </style></head>"""
+            html_content = html_content.replace("</head>", css_fix)
+            
+            HTML(string=html_content).write_pdf(self.output_file)
                 
             self.progress.emit(100)
             status = "with syntax highlighting" if self.use_highlighting else ""
             self.logger.info(f"PDF conversion successful: {self.output_file}")
             self.finished.emit(True, f"Successfully converted to PDF {status}:\n{self.output_file}")
             
+        except ImportError:
+            self.logger.error("WeasyPrint is not installed or missing GTK3 dependencies")
+            self.finished.emit(False, "PDF conversion failed: WeasyPrint is not installed or missing GTK3 dependencies.\n\nPlease install 'weasyprint' and ensure GTK3 is installed on Windows.")
         except Exception as e:
             self.logger.error(f"PDF conversion failed: {str(e)}")
-            self.finished.emit(False, f"PDF conversion failed: {str(e)}\n\n(If it says browser executable doesn't exist, try running 'playwright install chromium' in your terminal)")
+            self.finished.emit(False, f"PDF conversion failed: {str(e)}")
 
     def convert_to_word(self):
         """Convert markdown to Word using pypandoc_binary"""
