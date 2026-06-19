@@ -207,6 +207,25 @@
                </property>
               </widget>
              </item>
+             <item>
+              <widget class="QComboBox" name="excelSheetModeCombo">
+               <item>
+                <property name="text">
+                 <string>📊 One table per sheet</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>📊 All tables in one sheet</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>📊 Group by section (---)</string>
+                </property>
+               </item>
+              </widget>
+             </item>
             </layout>
            </item>
            <item>

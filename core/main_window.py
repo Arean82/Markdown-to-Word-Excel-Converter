@@ -92,6 +92,12 @@ class MainWindow(QMainWindow):
             self.excelRadio.setChecked(True)
         elif saved_format == "PDF" and hasattr(self, 'pdfMarkdownRadio'):
             self.pdfMarkdownRadio.setChecked(True)
+            
+        if hasattr(self, 'excelSheetModeCombo'):
+            saved_excel_mode = self.settings.value("excel_sheet_mode", "📊 One table per sheet")
+            index = self.excelSheetModeCombo.findText(saved_excel_mode)
+            if index >= 0:
+                self.excelSheetModeCombo.setCurrentIndex(index)
         
         # Set dynamic property for qt-material to style it as a large primary action button
         self.convertBtn.setProperty("class", "primary")
@@ -151,6 +157,8 @@ class MainWindow(QMainWindow):
         self.convertBtn.clicked.connect(self.convert_file)
         self.exportDiagramBtn.clicked.connect(self.export_diagram)
         self.wordRadio.toggled.connect(self.toggle_word_settings)
+        if hasattr(self, 'excelRadio'):
+            self.excelRadio.toggled.connect(self.toggle_word_settings)
         if hasattr(self, 'pdfMarkdownRadio'):
             self.pdfMarkdownRadio.toggled.connect(self.toggle_word_settings)
             
@@ -427,6 +435,8 @@ class MainWindow(QMainWindow):
         
         self.statusLabel.setText(f"Converting: {os.path.basename(file_to_convert)}...")
         
+        excel_sheet_mode = self.excelSheetModeCombo.currentText() if hasattr(self, 'excelSheetModeCombo') else "📊 One table per sheet"
+        
         self.worker = ConversionWorker(
             file_to_convert,
             output_file,
@@ -435,7 +445,8 @@ class MainWindow(QMainWindow):
             paper_size,
             orientation,
             margin,
-            custom_margins
+            custom_margins,
+            excel_sheet_mode=excel_sheet_mode
         )
         self.worker.progress.connect(self.update_progress)
         self.worker.status.connect(self.update_status)
@@ -466,6 +477,9 @@ class MainWindow(QMainWindow):
         word_settings_enabled = enabled and format_selected
         self.highlightCheck.setEnabled(word_settings_enabled)
         
+        if hasattr(self, 'excelSheetModeCombo'):
+            self.excelSheetModeCombo.setEnabled(enabled and hasattr(self, 'excelRadio') and self.excelRadio.isChecked())
+        
         if hasattr(self, 'paperSizeCombo'):
             self.paperSizeCombo.setEnabled(word_settings_enabled)
             self.orientationCombo.setEnabled(word_settings_enabled)
@@ -479,9 +493,16 @@ class MainWindow(QMainWindow):
             self.exportDiagramBtn.setEnabled(enabled and self.current_file_type == 'mermaid')
             
     def toggle_word_settings(self, checked: bool = False):
-        """Toggle Word/PDF specific settings"""
+        """Toggle Word/PDF specific settings vs Excel specific settings"""
         format_selected = self.wordRadio.isChecked() or (hasattr(self, 'pdfMarkdownRadio') and self.pdfMarkdownRadio.isChecked())
         self.highlightCheck.setEnabled(format_selected)
+        self.highlightCheck.setVisible(format_selected)
+        
+        if hasattr(self, 'excelSheetModeCombo'):
+            excel_selected = hasattr(self, 'excelRadio') and self.excelRadio.isChecked()
+            self.excelSheetModeCombo.setEnabled(excel_selected)
+            self.excelSheetModeCombo.setVisible(excel_selected)
+            
         if hasattr(self, 'paperSizeCombo'):
             self.paperSizeCombo.setEnabled(format_selected)
             self.orientationCombo.setEnabled(format_selected)
@@ -635,6 +656,9 @@ class MainWindow(QMainWindow):
                 self.settings.setValue("orientation", self.orientationCombo.currentText())
             if hasattr(self, 'highlightCheck'):
                 self.settings.setValue("highlight", self.highlightCheck.isChecked())
+                
+            if hasattr(self, 'excelSheetModeCombo'):
+                self.settings.setValue("excel_sheet_mode", self.excelSheetModeCombo.currentText())
                 
             if hasattr(self, 'wordRadio') and self.wordRadio.isChecked():
                 self.settings.setValue("format", "Word")

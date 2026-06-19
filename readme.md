@@ -106,7 +106,10 @@ When converting to Excel, the application:
 - ✅ Handles **text alignment** (left/center/right)
 - ✅ Supports **merged cells** (rowspan/colspan)
 - ✅ Auto-adjusts column widths using openpyxl.utils.get_column_letter
-- ✅ Creates separate sheets for multiple tables
+- ✅ **Three Excel Sheet Modes**: 
+  - **One table per sheet**: Keeps each table in its own separate sheet.
+  - **All tables in one sheet**: Combines all tables sequentially into a single sheet, placing headings as bold line items above them.
+  - **Group by section (---)**: Groups elements separated by `---` (horizontal rules) into dedicated sheets. It intelligently extracts Markdown headings (e.g., `### TC-001`) to automatically name the Excel sheet tab, places the heading text as a bold line item inside the sheet for context, and stacks the tables neatly below it separated by 3 blank lines.
 - ✅ Initializes sheets with empty DataFrame to ensure writer.sheets access
 - ✅ Removes default blank "Sheet" automatically when multiple sheets exist
 - ✅ Falls back to pytablewriter for structured data if no tables found

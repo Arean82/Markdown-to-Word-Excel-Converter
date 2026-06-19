@@ -39,7 +39,7 @@ class ConversionWorker(QThread):
     status = pyqtSignal(str)
     finished = pyqtSignal(bool, str)
     
-    def __init__(self, input_file: str, output_file: str, conversion_type: str, use_highlighting: bool = True, paper_size: str = "A4", orientation: str = "Portrait", margin: str = "Normal", custom_margins: dict = None):
+    def __init__(self, input_file: str, output_file: str, conversion_type: str, use_highlighting: bool = True, paper_size: str = "A4", orientation: str = "Portrait", margin: str = "Normal", custom_margins: dict = None, excel_sheet_mode: str = "📊 One table per sheet"):
         super().__init__()
         self.input_file = input_file
         self.output_file = output_file
@@ -49,6 +49,7 @@ class ConversionWorker(QThread):
         self.orientation = orientation
         self.margin = margin
         self.custom_margins = custom_margins if custom_margins else {"top": 2.54, "bottom": 2.54, "left": 2.54, "right": 2.54}
+        self.excel_sheet_mode = excel_sheet_mode
         self.logger = Logger()
     
     def run(self):
@@ -344,27 +345,87 @@ class ConversionWorker(QThread):
             html = markdown.markdown(md_content, extensions=['tables', 'fenced_code'])
             self.logger.info("Converted markdown to HTML, looking for tables")
             
-            # Parse HTML and find tables
+            # Parse HTML and find tables, horizontal rules, headings, and text blocks
             soup = BeautifulSoup(html, 'html.parser')
-            tables = soup.find_all('table')
-            self.logger.info(f"Found {len(tables)} table(s)")
             
-            if tables:
+            tracked_tags = ['table', 'hr', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'ul', 'ol', 'blockquote', 'pre']
+            all_found = soup.find_all(tracked_tags)
+            
+            elements = []
+            for el in all_found:
+                # Check if this element is a descendant of another tracked element
+                parent_is_tracked = False
+                p_node = el.parent
+                while p_node and p_node.name != '[document]':
+                    if p_node.name in tracked_tags:
+                        parent_is_tracked = True
+                        break
+                    p_node = p_node.parent
+                
+                if not parent_is_tracked:
+                    elements.append(el)
+            
+            sections = []
+            if self.excel_sheet_mode == "📊 Group by section (---)":
+                current_section_elements = []
+                for el in elements:
+                    if el.name == 'hr':
+                        if current_section_elements:
+                            sections.append(current_section_elements)
+                            current_section_elements = []
+                    else:
+                        current_section_elements.append(el)
+                if current_section_elements:
+                    sections.append(current_section_elements)
+            elif self.excel_sheet_mode == "📊 All tables in one sheet":
+                all_elements = [el for el in elements if el.name != 'hr']
+                if all_elements:
+                    sections.append(all_elements)
+            else:
+                # One table per sheet (only keep tables, ignore headings for backward compatibility)
+                sections = [[t] for t in elements if t.name == 'table']
+                
+            table_count = sum(1 for s in sections for el in s if el.name == 'table')
+            self.logger.info(f"Found {table_count} table(s) across {len(sections)} sections")
+            
+            if table_count > 0:
                 # Process tables with formatting and merged cells
-                self.status.emit(f"Found {len(tables)} tables, converting with formatting...")
+                self.status.emit(f"Found {table_count} tables, converting with formatting...")
                 self.progress.emit(50)
                 
                 workbook = openpyxl.Workbook()
                 
-                for table_idx, table in enumerate(tables, 1):
-                    self.status.emit(f"Processing table {table_idx}...")
-                    self.logger.info(f"Processing table {table_idx}")
+                for section_idx, tables_in_section in enumerate(sections, 1):
+                    self.status.emit(f"Processing section {section_idx}...")
                     
-                    # Create sheet
-                    sheet_name = f'Table_{table_idx}' if len(tables) > 1 else 'Sheet1'
+                    # Determine sheet name based on mode and headings
+                    heading_text = ""
+                    for el in tables_in_section:
+                        if el.name in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
+                            text = el.get_text().strip()
+                            if text:
+                                heading_text = text
+                                break
+                                
+                    if self.excel_sheet_mode == "📊 One table per sheet":
+                        sheet_name = f'Table_{section_idx}' if len(sections) > 1 else 'Sheet1'
+                    elif self.excel_sheet_mode == "📊 All tables in one sheet":
+                        sheet_name = 'Combined_Tables'
+                    else:
+                        if heading_text:
+                            # Clean up sheet name for Excel
+                            clean_name = heading_text
+                            for char in ['\\', '/', '*', '?', ':', '[', ']']:
+                                clean_name = clean_name.replace(char, ' ')
+                            sheet_name = clean_name.strip()[:31]
+                        else:
+                            sheet_name = f'Section_{section_idx}' if len(sections) > 1 else 'Sheet1'
+                        
                     sheet_name = sheet_name[:31]
+                    if not sheet_name:
+                        sheet_name = f'Section_{section_idx}'
                     
-                    if table_idx == 1:
+                    if section_idx == 1:
                         worksheet = workbook.active
                         worksheet.title = sheet_name
                     else:
@@ -372,99 +433,128 @@ class ConversionWorker(QThread):
                     
                     # Track occupied cells for rowspan/colspan
                     occupied = {}
+                    current_row_offset = 0
                     
-                    # Process rows
-                    rows = table.find_all('tr')
-                    for r_idx, tr in enumerate(rows, 1):
-                        c_idx = 1
-                        for td in tr.find_all(['td', 'th']):
-                            # Skip cells already covered by previous rowspan
-                            while (r_idx, c_idx) in occupied:
-                                c_idx += 1
-                            
-                            # Get cell properties
-                            rowspan = int(td.get('rowspan', 1))
-                            colspan = int(td.get('colspan', 1))
-                            cell_html = str(td)
-                            cell_text = td.get_text().strip()
-                            
-                            # Write value to cell
-                            val = cell_text
-                            if val.isdigit():
-                                val = int(val)
-                            else:
-                                try:
-                                    val = float(val)
-                                except ValueError:
-                                    pass
-                            
-                            cell_obj = worksheet.cell(row=r_idx, column=c_idx, value=val)
-                            
-                            # Handle merged cells
-                            if rowspan > 1 or colspan > 1:
-                                last_row = r_idx + rowspan - 1
-                                last_col = c_idx + colspan - 1
-                                worksheet.merge_cells(
-                                    start_row=r_idx, start_column=c_idx,
-                                    end_row=last_row, end_column=last_col
-                                )
-                                
-                                # Mark all cells in merge range as occupied
-                                for r in range(r_idx, last_row + 1):
-                                    for c in range(c_idx, last_col + 1):
-                                        occupied[(r, c)] = True
-                            
-                            # Check for bold formatting
-                            is_bold = (
-                                '**' in cell_html or 
-                                '<strong>' in cell_html or 
-                                '<b>' in cell_html or 
-                                td.name == 'th'
-                            )
-                            
-                            # Check for italic formatting
-                            is_italic = (
-                                ('*' in cell_html and '**' not in cell_html) or
-                                '<em>' in cell_html or
-                                '<i>' in cell_html
-                            )
-                            
-                            # Apply bold/italic
-                            if is_bold and is_italic:
-                                cell_obj.font = Font(bold=True, italic=True)
-                            elif is_bold:
-                                cell_obj.font = Font(bold=True)
-                            elif is_italic:
-                                cell_obj.font = Font(italic=True)
-                            
-                            # Get alignment from style or align attribute
-                            align_attr = td.get('align', '').lower()
-                            style_attr = td.get('style', '').lower()
-                            
-                            if align_attr == 'center' or 'text-align: center' in style_attr:
-                                cell_obj.alignment = Alignment(horizontal="center")
-                            elif align_attr == 'right' or 'text-align: right' in style_attr:
-                                cell_obj.alignment = Alignment(horizontal="right")
-                            elif align_attr == 'left' or 'text-align: left' in style_attr:
-                                cell_obj.alignment = Alignment(horizontal="left")
-                            
-                            # Auto-adjust column width
-                            if len(cell_text) > 0:
-                                col_letter = get_column_letter(c_idx)
-                                if col_letter in worksheet.column_dimensions:
-                                    current_width = worksheet.column_dimensions[col_letter].width or 0
-                                else:
-                                    current_width = 0
-                                new_width = max(current_width, len(cell_text) + 2)
-                                worksheet.column_dimensions[col_letter].width = min(new_width, 50)
-                            
-                            # Move to next column
-                            c_idx += colspan
+                    for el in tables_in_section:
+                        if el.name in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
+                            if self.excel_sheet_mode in ["📊 Group by section (---)", "📊 All tables in one sheet"]:
+                                text = el.get_text().strip()
+                                if text:
+                                    cell = worksheet.cell(row=current_row_offset + 1, column=1, value=text)
+                                    cell.font = Font(bold=True, size=12)
+                                    current_row_offset += 2 # Leave a blank row after heading
+                        elif el.name == 'table':
+                            table = el
+                            # Process rows
+                            rows = table.find_all('tr')
+                            for r_idx, tr in enumerate(rows, current_row_offset + 1):
+                                c_idx = 1
+                                for td in tr.find_all(['td', 'th']):
+                                    # Skip cells already covered by previous rowspan
+                                    while (r_idx, c_idx) in occupied:
+                                        c_idx += 1
+                                    
+                                    # Get cell properties
+                                    rowspan = int(td.get('rowspan', 1))
+                                    colspan = int(td.get('colspan', 1))
+                                    cell_html = str(td)
+                                    cell_text = td.get_text().strip()
+                                    
+                                    # Write value to cell
+                                    val = cell_text
+                                    if val.isdigit():
+                                        val = int(val)
+                                    else:
+                                        try:
+                                            val = float(val)
+                                        except ValueError:
+                                            pass
+                                    
+                                    cell_obj = worksheet.cell(row=r_idx, column=c_idx, value=val)
+                                    
+                                    # Handle merged cells
+                                    if rowspan > 1 or colspan > 1:
+                                        last_row = r_idx + rowspan - 1
+                                        last_col = c_idx + colspan - 1
+                                        worksheet.merge_cells(
+                                            start_row=r_idx, start_column=c_idx,
+                                            end_row=last_row, end_column=last_col
+                                        )
+                                        
+                                        # Mark all cells in merge range as occupied
+                                        for r in range(r_idx, last_row + 1):
+                                            for c in range(c_idx, last_col + 1):
+                                                occupied[(r, c)] = True
+                                    
+                                    # Check for bold formatting
+                                    is_bold = (
+                                        '**' in cell_html or 
+                                        '<strong>' in cell_html or 
+                                        '<b>' in cell_html or 
+                                        td.name == 'th'
+                                    )
+                                    
+                                    # Check for italic formatting
+                                    is_italic = (
+                                        ('*' in cell_html and '**' not in cell_html) or
+                                        '<em>' in cell_html or
+                                        '<i>' in cell_html
+                                    )
+                                    
+                                    # Apply bold/italic
+                                    if is_bold and is_italic:
+                                        cell_obj.font = Font(bold=True, italic=True)
+                                    elif is_bold:
+                                        cell_obj.font = Font(bold=True)
+                                    elif is_italic:
+                                        cell_obj.font = Font(italic=True)
+                                    
+                                    # Get alignment from style or align attribute
+                                    align_attr = td.get('align', '').lower()
+                                    style_attr = td.get('style', '').lower()
+                                    
+                                    if align_attr == 'center' or 'text-align: center' in style_attr:
+                                        cell_obj.alignment = Alignment(horizontal="center")
+                                    elif align_attr == 'right' or 'text-align: right' in style_attr:
+                                        cell_obj.alignment = Alignment(horizontal="right")
+                                    elif align_attr == 'left' or 'text-align: left' in style_attr:
+                                        cell_obj.alignment = Alignment(horizontal="left")
+                                    
+                                    # Auto-adjust column width
+                                    if len(cell_text) > 0:
+                                        col_letter = get_column_letter(c_idx)
+                                        if col_letter in worksheet.column_dimensions:
+                                            current_width = worksheet.column_dimensions[col_letter].width or 0
+                                        else:
+                                            current_width = 0
+                                        new_width = max(current_width, len(cell_text) + 2)
+                                        worksheet.column_dimensions[col_letter].width = min(new_width, 50)
+                                    
+                                    # Move to next column
+                                    c_idx += colspan
+                                    
+                            if self.excel_sheet_mode in ["📊 Group by section (---)", "📊 All tables in one sheet"]:
+                                current_row_offset += len(rows) + 3 # Separate tables by 3 lines
+                        else:
+                            # It's a text block (p, ul, ol, blockquote, pre)
+                            if self.excel_sheet_mode in ["📊 Group by section (---)", "📊 All tables in one sheet"]:
+                                text = el.get_text()
+                                lines = [line.strip() for line in text.split('\n') if line.strip()]
+                                if lines:
+                                    for line in lines:
+                                        if el.name in ['ul', 'ol']:
+                                            line = "• " + line
+                                        elif el.name == 'blockquote':
+                                            line = "> " + line
+                                        worksheet.cell(row=current_row_offset + 1, column=1, value=line)
+                                        current_row_offset += 1
+                                    current_row_offset += 1 # Add blank line after text block
+                        
                 workbook.save(self.output_file)
                 
                 self.progress.emit(100)
-                self.logger.info(f"Excel conversion successful: {len(tables)} tables to {self.output_file}")
-                self.finished.emit(True, f"Successfully converted {len(tables)} table(s) to Excel:\n{self.output_file}")
+                self.logger.info(f"Excel conversion successful: {table_count} tables to {self.output_file}")
+                self.finished.emit(True, f"Successfully converted {table_count} table(s) to Excel:\n{self.output_file}")
                 return
             
             # No tables found, try pytablewriter for structured data
