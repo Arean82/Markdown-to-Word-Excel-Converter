@@ -8,7 +8,8 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[
-        ('assets', 'assets')
+        ('assets', 'assets'),
+        ('ui', 'ui')
     ],
     hiddenimports=[
         'pypandoc',
@@ -18,7 +19,8 @@ a = Analysis(
         'bs4',
         'openpyxl',
         'pytablewriter',
-        'qt_material'
+        'qt_material',
+        'jaraco.text'
     ],
     hookspath=[],
     hooksconfig={},
@@ -38,7 +40,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name=os.path.join('md_converter_onefile', 'MD Converter'),
+    name='MD Converter',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

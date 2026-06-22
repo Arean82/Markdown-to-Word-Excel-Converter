@@ -7,7 +7,8 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[
-        ('assets', 'assets')
+        ('assets', 'assets'),
+        ('ui', 'ui')
     ],
     hiddenimports=[
         'pypandoc',
@@ -17,7 +18,8 @@ a = Analysis(
         'bs4',
         'openpyxl',
         'pytablewriter',
-        'qt_material'
+        'qt_material',
+        'jaraco.text'
     ],
     hookspath=[],
     hooksconfig={},
@@ -58,5 +60,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='md_converter_onedir',
+    name='onedir',
 )

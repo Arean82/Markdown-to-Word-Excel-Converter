@@ -1,6 +1,5 @@
 # main.py
-# Entry point for the application
-# Markdown to Word/Excel Converter
+# Entry point for the application Markdown to Word/Excel Converter
 
 import sys
 import os
@@ -15,9 +14,15 @@ from core.main_window import MainWindow
 
 import urllib.request
 
+def get_resource_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller"""
+    if hasattr(sys, '_MEIPASS'):
+        return Path(sys._MEIPASS) / relative_path
+    return Path(__file__).parent / relative_path
+
 def download_badges():
     """Download shields.io badges to assets folder if they don't exist"""
-    assets_dir = Path(__file__).parent / 'assets'
+    assets_dir = get_resource_path('assets')
     assets_dir.mkdir(exist_ok=True)
     
     badges = {
@@ -39,6 +44,15 @@ def download_badges():
 
 def main():
     """Application entry point"""
+    # Fix for Windows taskbar icon not showing the custom icon
+    if os.name == 'nt':
+        import ctypes
+        myappid = 'mdconverter.app.1.0' # arbitrary string
+        try:
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+        except Exception:
+            pass
+
     download_badges()
     
     app = QApplication(sys.argv)
@@ -47,7 +61,7 @@ def main():
         app.setStyle('Fusion')
     
     # Set application icon (if present)
-    icon_path = Path(__file__).parent / 'assets' / 'icon.png'
+    icon_path = get_resource_path(Path('assets') / 'icon.png')
     if icon_path.exists():
         app.setWindowIcon(QIcon(str(icon_path)))
     
