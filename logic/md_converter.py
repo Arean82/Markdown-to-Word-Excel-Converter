@@ -395,6 +395,9 @@ class ConversionWorker(QThread):
                 
                 workbook = openpyxl.Workbook()
                 
+                anchor_map = {}
+                pending_internal_links = []
+                
                 for section_idx, tables_in_section in enumerate(sections, 1):
                     self.status.emit(f"Processing section {section_idx}...")
                     
@@ -442,6 +445,17 @@ class ConversionWorker(QThread):
                                 if text:
                                     cell = worksheet.cell(row=current_row_offset + 1, column=1, value=text)
                                     cell.font = Font(bold=True, size=12)
+                                    
+                                    # Track anchor ID
+                                    a_tag = el.find('a', id=True)
+                                    anchor_id = None
+                                    if a_tag:
+                                        anchor_id = a_tag.get('id')
+                                    elif el.get('id'):
+                                        anchor_id = el.get('id')
+                                    if anchor_id:
+                                        anchor_map[anchor_id] = (sheet_name, f"A{current_row_offset + 1}")
+                                        
                                     current_row_offset += 2 # Leave a blank row after heading
                         elif el.name == 'table':
                             table = el
@@ -508,6 +522,22 @@ class ConversionWorker(QThread):
                                         cell_obj.font = Font(bold=True)
                                     elif is_italic:
                                         cell_obj.font = Font(italic=True)
+                                        
+                                    # Handle hyperlinks
+                                    a_tag = td.find('a', href=True)
+                                    if a_tag:
+                                        href = a_tag.get('href')
+                                        # Preserve existing bold/italic if any
+                                        current_bold = cell_obj.font.bold
+                                        current_italic = cell_obj.font.italic
+                                        
+                                        if href.startswith('#'):
+                                            anchor_id = href[1:]
+                                            pending_internal_links.append((cell_obj, anchor_id))
+                                        else:
+                                            cell_obj.hyperlink = href
+                                        
+                                        cell_obj.font = Font(color="0563C1", underline="single", bold=current_bold, italic=current_italic)
                                     
                                     # Get alignment from style or align attribute
                                     align_attr = td.get('align', '').lower()
@@ -546,9 +576,26 @@ class ConversionWorker(QThread):
                                             line = "• " + line
                                         elif el.name == 'blockquote':
                                             line = "> " + line
-                                        worksheet.cell(row=current_row_offset + 1, column=1, value=line)
+                                        cell = worksheet.cell(row=current_row_offset + 1, column=1, value=line)
+                                        
+                                        # Track anchor ID in text block
+                                        a_tag = el.find('a', id=True)
+                                        anchor_id = None
+                                        if a_tag:
+                                            anchor_id = a_tag.get('id')
+                                        elif el.get('id'):
+                                            anchor_id = el.get('id')
+                                        if anchor_id:
+                                            anchor_map[anchor_id] = (sheet_name, f"A{current_row_offset + 1}")
+                                        
                                         current_row_offset += 1
                                     current_row_offset += 1 # Add blank line after text block
+                
+                # Resolve internal links
+                for cell_obj, anchor_id in pending_internal_links:
+                    if anchor_id in anchor_map:
+                        target_sheet, target_coord = anchor_map[anchor_id]
+                        cell_obj.hyperlink = f"#'{target_sheet}'!{target_coord}"
                         
                 workbook.save(self.output_file)
                 

@@ -63,9 +63,12 @@ def main():
     # Set application icon (if present)
     icon_path = get_resource_path(Path('assets') / 'icon.png')
     if icon_path.exists():
-        app.setWindowIcon(QIcon(str(icon_path)))
+        app_icon = QIcon(str(icon_path))
+        app.setWindowIcon(app_icon)
     
     window = MainWindow()
+    if icon_path.exists():
+        window.setWindowIcon(app_icon)
     window.show()
     
     sys.exit(app.exec())
