@@ -50,18 +50,31 @@
      <layout class="QHBoxLayout" name="fileLayout">
       <item>
        <widget class="QPushButton" name="selectFileBtn">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="text">
          <string>📂 Select Files</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QLabel" name="outputLabel">
-        <property name="styleSheet">
-         <string>color: #888; font-style: italic;</string>
+       <widget class="QPushButton" name="openOutputFolderBtn">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
         </property>
         <property name="text">
-         <string>💾 Output saved in same folder as input file</string>
+         <string>💾 Output saved in same folder
+as input file (Click to open)</string>
+        </property>
+        <property name="toolTip">
+         <string>Open the output folder</string>
         </property>
        </widget>
       </item>
@@ -80,6 +93,12 @@
       </item>
       <item>
        <widget class="QPushButton" name="previewBtn">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="enabled">
          <bool>false</bool>
         </property>

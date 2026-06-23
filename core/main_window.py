@@ -156,6 +156,9 @@ class MainWindow(QMainWindow):
         self.previewBtn.clicked.connect(self.show_preview_dialog)
         self.convertBtn.clicked.connect(self.convert_file)
         self.exportDiagramBtn.clicked.connect(self.export_diagram)
+        if hasattr(self, 'openOutputFolderBtn'):
+            self.openOutputFolderBtn.clicked.connect(self.open_output_folder)
+            self.openOutputFolderBtn.setEnabled(False)
         self.wordRadio.toggled.connect(self.toggle_word_settings)
         if hasattr(self, 'excelRadio'):
             self.excelRadio.toggled.connect(self.toggle_word_settings)
@@ -338,6 +341,8 @@ class MainWindow(QMainWindow):
         # Select the first file by default
         self.fileListWidget.setCurrentRow(0)
         self.convertBtn.setEnabled(True)
+        if hasattr(self, 'openOutputFolderBtn'):
+            self.openOutputFolderBtn.setEnabled(True)
         
         self.logger.info(f"Selected {len(self.current_files)} files.")
         self.show_correct_section()
@@ -491,6 +496,8 @@ class MainWindow(QMainWindow):
         self.convertBtn.setEnabled(enabled and self.current_file is not None)
         if hasattr(self, 'exportDiagramBtn'):
             self.exportDiagramBtn.setEnabled(enabled and self.current_file_type == 'mermaid')
+        if hasattr(self, 'openOutputFolderBtn'):
+            self.openOutputFolderBtn.setEnabled(enabled and self.current_file is not None)
             
     def toggle_word_settings(self, checked: bool = False):
         """Toggle Word/PDF specific settings vs Excel specific settings"""
@@ -627,6 +634,27 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.logger.error(f"Export failed: {str(e)}")
             QMessageBox.critical(self, "Error", f"Failed to export diagram:\n{str(e)}")
+
+    def open_output_folder(self):
+        """Open the folder containing the currently selected file(s)"""
+        import platform
+        import subprocess
+        
+        folder_path = self.last_path
+        if not folder_path or not os.path.exists(folder_path):
+            return
+            
+        try:
+            if platform.system() == "Windows":
+                os.startfile(folder_path)
+            elif platform.system() == "Darwin":
+                subprocess.Popen(["open", folder_path])
+            else:
+                subprocess.Popen(["xdg-open", folder_path])
+            self.logger.info(f"Opened output folder: {folder_path}")
+        except Exception as e:
+            self.logger.error(f"Failed to open folder: {str(e)}")
+            QMessageBox.warning(self, "Error", f"Failed to open folder:\n{str(e)}")
 
     def closeEvent(self, event):
         """Clean up background threads before closing."""

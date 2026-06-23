@@ -5,6 +5,15 @@ import sys
 import os
 from pathlib import Path
 
+# Fix for Windows taskbar icon not showing the custom icon
+if os.name == 'nt':
+    import ctypes
+    myappid = 'mdconverter.app.1.0' # arbitrary string
+    try:
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+    except Exception:
+        pass
+
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -44,15 +53,6 @@ def download_badges():
 
 def main():
     """Application entry point"""
-    # Fix for Windows taskbar icon not showing the custom icon
-    if os.name == 'nt':
-        import ctypes
-        myappid = 'mdconverter.app.1.0' # arbitrary string
-        try:
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
-        except Exception:
-            pass
-
     download_badges()
     
     app = QApplication(sys.argv)
