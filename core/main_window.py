@@ -36,7 +36,7 @@ class MainWindow(QMainWindow):
         
         # Set UI Size
         self.resize(560, 600)
-        self.setMinimumSize(560, 600)
+        self.setMinimumSize(660, 600)
         
         # Initialize logger
         self.logger = Logger()
@@ -159,6 +159,12 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'openOutputFolderBtn'):
             self.openOutputFolderBtn.clicked.connect(self.open_output_folder)
             self.openOutputFolderBtn.setEnabled(False)
+            
+        if hasattr(self, 'checkBox_2'):
+            self.checkBox_2.toggled.connect(self.toggle_conversion_direction)
+            
+        if hasattr(self, 'reverseConvertBtn'):
+            self.reverseConvertBtn.clicked.connect(self.convert_office_to_md)
         self.wordRadio.toggled.connect(self.toggle_word_settings)
         if hasattr(self, 'excelRadio'):
             self.excelRadio.toggled.connect(self.toggle_word_settings)
@@ -308,11 +314,19 @@ class MainWindow(QMainWindow):
     
     def select_file(self):
         """Open file selection dialog"""
+        
+        is_reverse = hasattr(self, 'checkBox_2') and self.checkBox_2.isChecked()
+        
+        if is_reverse:
+            filter_str = "Office Files (*.docx *.xlsx);;Word Files (*.docx);;Excel Files (*.xlsx);;All Files (*)"
+        else:
+            filter_str = "Supported Files (*.md *.markdown *.mermaid *.mmd);;Markdown Files (*.md *.markdown);;Mermaid Files (*.mermaid *.mmd);;All Files (*)"
+            
         file_paths, _ = QFileDialog.getOpenFileNames(
             self,
             "Select Files",
             self.last_path,
-            "Supported Files (*.md *.markdown *.mermaid *.mmd);;Markdown Files (*.md *.markdown);;Mermaid Files (*.mermaid *.mmd);;All Files (*)"
+            filter_str
         )
         
         if not file_paths:
@@ -365,6 +379,12 @@ class MainWindow(QMainWindow):
         elif self.current_file.endswith('.mermaid'):
             self.current_file_type = 'mermaid'
             self.fileTypeLabel.setText(f"🎨 File type: Mermaid Diagram")
+        elif self.current_file.endswith('.docx'):
+            self.current_file_type = 'word'
+            self.fileTypeLabel.setText(f"📄 File type: Word Document")
+        elif self.current_file.endswith('.xlsx'):
+            self.current_file_type = 'excel'
+            self.fileTypeLabel.setText(f"📊 File type: Excel Document")
         else:
             self.fileTypeLabel.setText(f"📄 File type: Unknown")
     
@@ -372,6 +392,11 @@ class MainWindow(QMainWindow):
         """Show full preview dialog"""
         if not self.current_files:
             QMessageBox.warning(self, "Warning", "Please select files first!")
+            return
+            
+        is_reverse = hasattr(self, 'checkBox_2') and self.checkBox_2.isChecked()
+        if is_reverse:
+            QMessageBox.information(self, "Preview", "Previewing Office files is not currently supported.")
             return
             
         index = self.fileListWidget.currentRow()
@@ -467,7 +492,91 @@ class MainWindow(QMainWindow):
             self.conversion_failures += 1
             self.logger.error(f"Batch item failed: {message}")
             
-        self.start_next_conversion()
+        is_reverse = hasattr(self, 'checkBox_2') and self.checkBox_2.isChecked()
+        if is_reverse:
+            self.start_next_reverse_conversion()
+        else:
+            self.start_next_conversion()
+            
+    def toggle_conversion_direction(self, checked: bool):
+        """Toggle UI state for MD to Office vs Office to MD"""
+        if checked:
+            self.checkBox_2.setText("Office to MD File")
+            if hasattr(self, 'stackedWidget'):
+                self.stackedWidget.setCurrentIndex(2) # Page 3
+        else:
+            self.checkBox_2.setText("MD File to Office")
+            if hasattr(self, 'stackedWidget'):
+                if self.current_file_type == 'mermaid':
+                    self.stackedWidget.setCurrentIndex(1)
+                else:
+                    self.stackedWidget.setCurrentIndex(0)
+                    
+        # Clear currently selected files since types no longer match the intent
+        self.current_files = []
+        self.current_file = None
+        self.current_file_type = None
+        self.fileListWidget.clear()
+        self.fileTypeLabel.setText("📄 File type: Not selected")
+        self.set_ui_enabled(False)
+        self.selectFileBtn.setEnabled(True)
+
+    def convert_office_to_md(self):
+        """Convert selected Word/Excel files to Markdown"""
+        if not self.current_files:
+            QMessageBox.warning(self, "Warning", "Please select files first!")
+            return
+            
+        self.conversion_queue = [f for f in self.current_files if f.endswith(('.docx', '.xlsx'))]
+        if not self.conversion_queue:
+            QMessageBox.warning(self, "Warning", "No valid Office files selected for conversion.")
+            return
+
+        self.set_ui_enabled(False)
+        self.progressBar.setVisible(True)
+        self.progressBar.setValue(0)
+        
+        self.conversion_successes = 0
+        self.conversion_failures = 0
+        self.start_next_reverse_conversion()
+
+    def start_next_reverse_conversion(self):
+        if not hasattr(self, 'conversion_queue') or not self.conversion_queue:
+            self.set_ui_enabled(True)
+            self.progressBar.setValue(100)
+            self.statusLabel.setText("Batch conversion complete")
+            QMessageBox.information(self, "Batch Complete", f"Successfully converted {self.conversion_successes} file(s). Failed: {self.conversion_failures}")
+            return
+            
+        file_to_convert = self.conversion_queue.pop(0)
+        
+        input_path = Path(file_to_convert)
+        output_file = str(input_path.with_suffix('.md'))
+        
+        conv_type = "DocxToMd" if file_to_convert.endswith('.docx') else "XlsxToMd"
+        
+        self.statusLabel.setText(f"Converting: {os.path.basename(file_to_convert)}...")
+        
+        # We use dummy settings for Word styling as they don't apply to reverse conversion
+        self.worker = ConversionWorker(
+            file_to_convert,
+            output_file,
+            conv_type,
+            use_highlighting=False,
+            paper_size="A4",
+            orientation="Portrait",
+            margin="Normal",
+            custom_margins=None,
+            excel_sheet_mode=""
+        )
+        # Store whether we want to extract images for Word docs
+        extract_images = hasattr(self, 'extractImagesCheck') and self.extractImagesCheck.isChecked()
+        self.worker.extract_images = extract_images
+        
+        self.worker.progress.connect(self.update_progress)
+        self.worker.status.connect(self.update_status)
+        self.worker.finished.connect(self.on_batch_conversion_finished)
+        self.worker.start()
     
     def set_ui_enabled(self, enabled: bool):
         """Enable/disable UI elements"""
@@ -494,6 +603,8 @@ class MainWindow(QMainWindow):
             self.marginLabel.setEnabled(word_settings_enabled)
             
         self.convertBtn.setEnabled(enabled and self.current_file is not None)
+        if hasattr(self, 'reverseConvertBtn'):
+            self.reverseConvertBtn.setEnabled(enabled and self.current_file is not None)
         if hasattr(self, 'exportDiagramBtn'):
             self.exportDiagramBtn.setEnabled(enabled and self.current_file_type == 'mermaid')
         if hasattr(self, 'openOutputFolderBtn'):

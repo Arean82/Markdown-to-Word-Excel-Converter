@@ -9,7 +9,10 @@ a = Analysis(
     binaries=[],
     datas=[
         ('assets', 'assets'),
-        ('ui', 'ui')
+        ('ui', 'ui'),
+        ('readme.md', '.'),
+        ('LICENSE', '.'),
+        ('config.ini', '.')
     ],
     hiddenimports=[
         'pypandoc',

@@ -8,6 +8,7 @@ A professional PyQt6 desktop application designed to bridge the gap between Mark
 ## 🚀 Key Features
 
 - 📦 **Batch Conversion** – Select multiple Markdown files and convert them all simultaneously to your target format.
+- 🔄 **Reverse Conversion (Office to Markdown)** – Convert Word (.docx) and Excel (.xlsx) files back to standard Markdown while preserving tables, headings, and formatting.
 - 📄 **Word Conversion** – Full document flow using pypandoc_binary, enhanced with `python-docx` for customizable page formatting (Size, Orientation, Margins).
 - 📑 **PDF Conversion** – Generates beautiful, styled PDFs instantly using WeasyPrint, preserving your selected page formatting and gracefully breaking complex tables across pages.
 - 📊 **Powerhouse Excel Engine** – 
@@ -90,6 +91,12 @@ python main.py
    - The UI will automatically switch to the **Mermaid Export** panel.
    - Select your desired output format (**PNG, SVG, or PDF**).
    - Click "Export Diagram" to render and save your visual flowchart or diagram.
+
+   **If you selected to convert Office to Markdown:**
+   - Check the **Office to MD File** checkbox.
+   - Select your Word (`.docx`) or Excel (`.xlsx`) files.
+   - *(Word only)* You can choose to extract embedded images which will be saved into an `images/` folder next to your new Markdown file.
+   - Click "Convert to Markdown" to generate your `.md` files.
 
 ### Interactive Preview
 - Highlight any file in your list and click "👁️ Preview Selected"

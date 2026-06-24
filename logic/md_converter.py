@@ -64,6 +64,10 @@ class ConversionWorker(QThread):
                 self.convert_to_excel()
             elif self.conversion_type == "PDF":
                 self.convert_to_pdf()
+            elif self.conversion_type == "DocxToMd":
+                self.convert_docx_to_md()
+            elif self.conversion_type == "XlsxToMd":
+                self.convert_xlsx_to_md()
             else:
                 self.finished.emit(False, f"Unknown conversion type: {self.conversion_type}")
                 
@@ -641,3 +645,153 @@ class ConversionWorker(QThread):
         except Exception as e:
             self.logger.error(f"Excel conversion failed: {str(e)}")
             self.finished.emit(False, f"Excel conversion failed: {str(e)}")
+
+    def convert_docx_to_md(self):
+        """Convert Word document to Markdown using pypandoc"""
+        try:
+            import pypandoc
+            
+            self.logger.info(f"Starting reverse Word conversion: {self.input_file}")
+            self.status.emit("Converting Word to Markdown...")
+            self.progress.emit(30)
+            
+            extra_args = []
+            if hasattr(self, 'extract_images') and self.extract_images:
+                # Pandoc can extract images to a directory
+                media_dir = Path(self.output_file).parent / "images"
+                extra_args.append(f'--extract-media={media_dir}')
+            
+            pypandoc.convert_file(
+                self.input_file,
+                'gfm',
+                format='docx',
+                outputfile=self.output_file,
+                extra_args=extra_args
+            )
+            
+            self.progress.emit(100)
+            self.logger.info(f"Reverse Word conversion successful: {self.output_file}")
+            self.finished.emit(True, f"Successfully converted Word to Markdown:\n{self.output_file}")
+            
+        except Exception as e:
+            self.logger.error(f"Reverse Word conversion failed: {str(e)}")
+            self.finished.emit(False, f"Reverse Word conversion failed: {str(e)}")
+
+    def convert_xlsx_to_md(self):
+        """Convert Excel to Markdown preserving sheets, headings, and formatting"""
+        try:
+            import openpyxl
+            
+            self.logger.info(f"Starting reverse Excel conversion: {self.input_file}")
+            self.status.emit("Loading Excel file...")
+            self.progress.emit(20)
+            
+            wb = openpyxl.load_workbook(self.input_file, data_only=True)
+            markdown_content = []
+            
+            sheet_count = len(wb.sheetnames)
+            for sheet_idx, sheet_name in enumerate(wb.sheetnames):
+                self.status.emit(f"Parsing sheet {sheet_idx+1}/{sheet_count}: {sheet_name}")
+                self.progress.emit(20 + int(70 * (sheet_idx / sheet_count)))
+                
+                sheet = wb[sheet_name]
+                if sheet_idx > 0:
+                    markdown_content.append("\n---\n")
+                
+                markdown_content.append(f"## Sheet: {sheet_name}\n")
+                
+                # Analyze rows to determine blocks (tables vs text)
+                current_block = []
+                for row in sheet.iter_rows():
+                    # Count non-empty cells
+                    filled_cells = []
+                    for cell in row:
+                        if cell.value is not None and str(cell.value).strip() != "":
+                            filled_cells.append(cell)
+                            
+                    if len(filled_cells) == 0:
+                        # Empty row breaks current block
+                        if current_block:
+                            self._flush_excel_block(current_block, markdown_content)
+                            current_block = []
+                        markdown_content.append("")
+                    elif len(filled_cells) == 1:
+                        # Single cell might be a heading or just text
+                        if current_block:
+                            self._flush_excel_block(current_block, markdown_content)
+                            current_block = []
+                        
+                        cell = filled_cells[0]
+                        val = str(cell.value).strip()
+                        
+                        # Formatting
+                        prefix = ""
+                        suffix = ""
+                        if cell.font:
+                            if cell.font.b or (cell.font.sz and cell.font.sz > 12):
+                                prefix = "### "
+                                suffix = ""
+                            elif cell.font.i:
+                                prefix = "*"
+                                suffix = "*"
+                                
+                        if cell.hyperlink:
+                            val = f"[{val}]({cell.hyperlink.target})"
+                            
+                        markdown_content.append(f"{prefix}{val}{suffix}\n")
+                    else:
+                        # Multiple cells, part of a table
+                        current_block.append(row)
+                
+                # Flush remaining block
+                if current_block:
+                    self._flush_excel_block(current_block, markdown_content)
+                    
+            with open(self.output_file, 'w', encoding='utf-8') as f:
+                f.write('\n'.join(markdown_content))
+                
+            self.progress.emit(100)
+            self.logger.info(f"Reverse Excel conversion successful: {self.output_file}")
+            self.finished.emit(True, f"Successfully converted Excel to Markdown:\n{self.output_file}")
+            
+        except Exception as e:
+            self.logger.error(f"Reverse Excel conversion failed: {str(e)}")
+            self.finished.emit(False, f"Reverse Excel conversion failed: {str(e)}")
+
+    def _flush_excel_block(self, rows, markdown_content):
+        if not rows: return
+        
+        # Determine columns length
+        max_col = max(len(r) for r in rows)
+        
+        # Build table
+        table_lines = []
+        for row_idx, row in enumerate(rows):
+            line_parts = []
+            for col_idx in range(max_col):
+                if col_idx < len(row):
+                    cell = row[col_idx]
+                    val = str(cell.value).strip() if cell.value is not None else ""
+                    
+                    if val != "" and cell.font:
+                        if cell.font.b: val = f"**{val}**"
+                        elif cell.font.i: val = f"*{val}*"
+                    if val != "" and cell.hyperlink:
+                        val = f"[{val}]({cell.hyperlink.target})"
+                        
+                    # Escape pipes
+                    val = val.replace('|', '\\|')
+                    # Remove newlines inside cells
+                    val = val.replace('\n', ' <br> ')
+                    line_parts.append(val)
+                else:
+                    line_parts.append("")
+            
+            table_lines.append("| " + " | ".join(line_parts) + " |")
+            
+            # Add separator after header row
+            if row_idx == 0:
+                table_lines.append("|" + "|".join(["---" for _ in range(max_col)]) + "|")
+                
+        markdown_content.extend(table_lines)
+        markdown_content.append("\n")
