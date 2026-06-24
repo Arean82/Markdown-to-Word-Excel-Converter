@@ -8,7 +8,7 @@ from pathlib import Path
 # Fix for Windows taskbar icon not showing the custom icon
 if os.name == 'nt':
     import ctypes
-    myappid = 'mdconverter.app.1.0' # arbitrary string
+    myappid = u'mdconverter.app.1.0' # arbitrary string
     try:
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
     except Exception:
@@ -61,7 +61,20 @@ def main():
         app.setStyle('Fusion')
     
     # Set application icon (if present)
-    icon_path = get_resource_path(Path('assets') / 'icon.png')
+    png_icon_path = get_resource_path(Path('assets') / 'icon.png')
+    ico_icon_path = get_resource_path(Path('assets') / 'icon.ico')
+    
+    # On Windows, use .ico to ensure taskbar icon displays correctly
+    if os.name == 'nt' and png_icon_path.exists() and not ico_icon_path.exists():
+        try:
+            from PIL import Image
+            img = Image.open(png_icon_path)
+            img.save(ico_icon_path)
+        except Exception as e:
+            print(f"Failed to convert icon to ico: {e}")
+            
+    icon_path = ico_icon_path if (os.name == 'nt' and ico_icon_path.exists()) else png_icon_path
+    
     if icon_path.exists():
         app_icon = QIcon(str(icon_path))
         app.setWindowIcon(app_icon)
