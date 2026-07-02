@@ -12,3 +12,7 @@ dist/
 *.pyc
 crash*
 APP_DEBUG.txt
+
+# Virtual Environments
+venv/
+.venv/

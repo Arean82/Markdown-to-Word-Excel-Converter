@@ -9,8 +9,8 @@ import sys
 import os
 
 def exception_hook(exctype, value, tb):
-    with open("FATAL_CRASH.txt", "w") as f:
-        traceback.print_exception(exctype, value, tb, file=f)
+    # with open("FATAL_CRASH.txt", "w") as f:
+    #     traceback.print_exception(exctype, value, tb, file=f)
     sys.__excepthook__(exctype, value, tb)
 sys.excepthook = exception_hook
 
