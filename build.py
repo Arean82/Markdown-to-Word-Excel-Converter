@@ -2,12 +2,28 @@ import os
 import shutil
 import subprocess
 import sys
+import time
+
+def kill_running_app():
+    """Kill any running instances of the app to free file locks."""
+    if os.name == 'nt':
+        print("Ensuring no existing MD Converter.exe is running...")
+        subprocess.run(["taskkill", "/F", "/IM", "MD Converter.exe", "/T"], 
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        time.sleep(1)
 
 def clean_directory(path):
-    """Safely remove a directory if it exists."""
+    """Safely remove a directory if it exists, with retries for file locks."""
     if os.path.exists(path):
         print(f"Cleaning up '{path}'...")
-        shutil.rmtree(path, ignore_errors=True)
+        for _ in range(5):
+            try:
+                shutil.rmtree(path, ignore_errors=False)
+                break
+            except Exception:
+                time.sleep(1)
+        else:
+            print(f"  Warning: Could not completely delete '{path}'. PyInstaller might fail.")
 
 def main():
     print("=== MD Converter Build System ===")
@@ -31,6 +47,7 @@ def main():
         return
 
     print("\n1. Cleaning previous builds...")
+    kill_running_app()
     clean_directory('build')
     if build_onedir:
         clean_directory(os.path.join('dist', 'onedir'))

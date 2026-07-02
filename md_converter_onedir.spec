@@ -1,4 +1,10 @@
 # -*- mode: python ; coding: utf-8 -*-
+import pypandoc
+import os
+
+pandoc_path = pypandoc.get_pandoc_path()
+if os.name == 'nt' and not pandoc_path.endswith('.exe'):
+    pandoc_path += '.exe'
 
 block_cipher = None
 
@@ -7,6 +13,7 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[
+        (pandoc_path, 'pypandoc/files'),
         ('assets', 'assets'),
         ('ui', 'ui'),
         ('readme.md', '.'),
