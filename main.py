@@ -94,16 +94,16 @@ def main():
     window.show()
     
     print("Starting app.exec()")
-    with open("APP_DEBUG.txt", "w") as f:
-        f.write("Starting event loop\n")
+    # with open("APP_DEBUG.txt", "w") as f:
+    #     f.write("Starting event loop\n")
     try:
         ret = app.exec()
-        with open("APP_DEBUG.txt", "a") as f:
-            f.write(f"Event loop exited with code: {ret}\n")
+        # with open("APP_DEBUG.txt", "a") as f:
+        #     f.write(f"Event loop exited with code: {ret}\n")
         sys.exit(ret)
     except SystemExit as e:
-        with open("APP_DEBUG.txt", "a") as f:
-            f.write(f"SystemExit caught: {e}\n")
+        # with open("APP_DEBUG.txt", "a") as f:
+        #     f.write(f"SystemExit caught: {e}\n")
         sys.exit(e.code)
 
 
