@@ -1,5 +1,7 @@
-# logic/md_converter.py
-# Markdown Converter - Worker thread for Word/Excel conversion
+# ==================================================================
+# File: logic/md_converter.py
+# Description: Markdown Converter - Worker thread for Word/Excel conversion
+# ==================================================================
 
 import os
 import tempfile

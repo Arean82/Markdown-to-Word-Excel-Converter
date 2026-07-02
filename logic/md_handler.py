@@ -1,5 +1,7 @@
-# logic/md_handler.py
-# Markdown Handler - Handles markdown file operations
+# ==================================================================
+# File: logic/md_handler.py
+# Description: Markdown Handler - Handles markdown file operations
+# ==================================================================
 
 import os
 import re

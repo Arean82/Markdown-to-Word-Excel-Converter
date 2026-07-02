@@ -1,5 +1,7 @@
-# logic/md_preview_thread.py
-# Markdown Preview Thread - Worker thread for generating markdown preview
+# ==================================================================
+# File: logic/md_preview_thread.py
+# Description: Markdown Preview Thread - Worker thread for generating markdown preview
+# ==================================================================
 
 from PyQt6.QtCore import QThread, pyqtSignal
 import markdown

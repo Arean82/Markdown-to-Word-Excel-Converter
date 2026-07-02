@@ -1,10 +1,13 @@
 # -*- mode: python ; coding: utf-8 -*-
 import pypandoc
 import os
+from PyInstaller.utils.hooks import collect_data_files
 
 pandoc_path = pypandoc.get_pandoc_path()
 if os.name == 'nt' and not pandoc_path.endswith('.exe'):
     pandoc_path += '.exe'
+
+jaraco_data = collect_data_files('jaraco.text')
 
 block_cipher = None
 
@@ -19,7 +22,7 @@ a = Analysis(
         ('readme.md', '.'),
         ('LICENSE', '.'),
         ('config.ini', '.')
-    ],
+    ] + jaraco_data,
     hiddenimports=[
         'pypandoc',
         'docx',
@@ -51,7 +54,7 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
@@ -68,7 +71,7 @@ coll = COLLECT(
     a.zipfiles,
     a.datas,
     strip=False,
-    upx=True,
+    upx=False,
     upx_exclude=[],
     name='onedir',
 )

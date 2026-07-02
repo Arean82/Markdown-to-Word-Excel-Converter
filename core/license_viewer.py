@@ -1,5 +1,8 @@
-# core/license_viewer.py
-# License Viewer Dialog for Markdown Converter Application
+# ==================================================================
+# File: core/license_viewer.py
+# Description: License Viewer Dialog for Markdown Converter Application
+# ==================================================================
+
 
 from PyQt6.QtWidgets import QDialog
 from PyQt6.uic import loadUi

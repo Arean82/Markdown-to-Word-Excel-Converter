@@ -10,3 +10,5 @@ dist/
 
 # Python
 *.pyc
+crash*
+APP_DEBUG.txt

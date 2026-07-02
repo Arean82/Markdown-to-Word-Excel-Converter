@@ -1,6 +1,7 @@
-# core/preview_dialog.py
-# This module defines the PreviewDialog class, which provides a user interface for showing a full preview of markdown or mermaid files. It uses worker threads to generate previews without blocking the UI and supports error handling and logging. 
-# Preview Dialog - Shows full preview of markdown or mermaid files
+# ==================================================================
+# File: core/preview_dialog.py
+# Description: Preview Dialog for Markdown Converter Application
+# ==================================================================
 
 import os
 from pathlib import Path

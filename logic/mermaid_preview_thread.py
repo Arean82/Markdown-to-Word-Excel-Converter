@@ -1,5 +1,7 @@
-# logic/mermaid_preview_thread.py
-# Mermaid Preview Thread - Worker thread for rendering mermaid diagrams
+# ==================================================================
+# File: logic/mermaid_preview_thread.py
+# Description: Mermaid Preview Thread - Worker thread for rendering mermaid diagrams
+# ==================================================================
 
 from PyQt6.QtCore import QThread, pyqtSignal
 

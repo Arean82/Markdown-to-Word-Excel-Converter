@@ -1,6 +1,8 @@
-# core/main_window.py
-# This module defines the MainWindow class, which is the main application window for the Markdown Converter application. It provides the user interface for selecting files, previewing content, and converting markdown files to Word or Excel formats. It also includes menu options for theme selection, log viewing, and license information    
-# Main Window - Main application window
+# ==================================================================
+# File: core/main_window.py
+# Description: Main application window for Markdown Converter Application   
+# ==================================================================
+
 
 import sys
 import os

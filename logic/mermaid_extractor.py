@@ -1,5 +1,7 @@
-# logic/mermaid_extractor.py
-# Mermaid Extractor - Extract and process mermaid diagrams from markdown files
+# ==================================================================
+# File: logic/mermaid_extractor.py
+# Description: Mermaid Extractor - Extract and process mermaid diagrams from markdown files
+# ==================================================================
 
 import re
 from typing import List, Dict, Optional

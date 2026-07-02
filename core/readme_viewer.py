@@ -1,5 +1,7 @@
-# core/readme_viewer.py
-# README Viewer Dialog for Markdown Converter Application
+# ==================================================================
+# File: core/readme_viewer.py
+# Description: README Viewer Dialog for Markdown Converter Application
+# ==================================================================
 
 from PyQt6.QtWidgets import QDialog
 from PyQt6.uic import loadUi

@@ -10,3 +10,4 @@ mermaid-py>=0.1.0
 qt-material>=2.14
 weasyprint>=62.0
 jaraco.text>=4.0.0
+Setuptools

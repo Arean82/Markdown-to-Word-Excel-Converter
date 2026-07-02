@@ -1,5 +1,7 @@
-# logic/mermaid_renderer.py
-# Mermaid Renderer - Renders mermaid diagrams using Playwright
+# ==================================================================
+# File: logic/mermaid_renderer.py
+# Description: Mermaid Renderer - Renders mermaid diagrams using Playwright
+# ==================================================================
 
 import os
 import tempfile

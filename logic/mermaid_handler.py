@@ -1,5 +1,7 @@
-# logic/mermaid_handler.py
-# Mermaid Handler - Handles mermaid file operations and diagram management
+# ==================================================================
+# File: logic/mermaid_handler.py
+# Description: Mermaid Handler - Handles mermaid file operations and diagram management
+# ==================================================================
 
 import os
 import re

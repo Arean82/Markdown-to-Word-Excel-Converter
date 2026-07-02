@@ -1,6 +1,7 @@
-# core/logger.py
-# This module defines the Logger class, which provides a singleton logger for the application. It writes logs to a file and optionally to the console. It also provides methods to retrieve log content and clear logs. 
-# Logger module - Singleton logger for the application
+# ==================================================================
+# File: core/logger.py
+# Description: Logger class for Markdown Converter Application
+# ==================================================================
 
 import logging
 from pathlib import Path

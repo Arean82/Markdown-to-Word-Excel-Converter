@@ -1,8 +1,19 @@
-# main.py
-# Entry point for the application Markdown to Word/Excel Converter
+# ==================================================================
+# File: main.py
+# Description: Entry point for the application Markdown to Word/Excel Converter
+# ==================================================================
 
+import urllib.request
+import traceback
 import sys
 import os
+
+def exception_hook(exctype, value, tb):
+    with open("FATAL_CRASH.txt", "w") as f:
+        traceback.print_exception(exctype, value, tb, file=f)
+    sys.__excepthook__(exctype, value, tb)
+sys.excepthook = exception_hook
+
 from pathlib import Path
 
 # Fix for Windows taskbar icon not showing the custom icon
@@ -20,8 +31,6 @@ sys.path.insert(0, str(Path(__file__).parent))
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtGui import QIcon
 from core.main_window import MainWindow
-
-import urllib.request
 
 def get_resource_path(relative_path):
     """Get absolute path to resource, works for dev and for PyInstaller"""
@@ -84,7 +93,18 @@ def main():
         window.setWindowIcon(app_icon)
     window.show()
     
-    sys.exit(app.exec())
+    print("Starting app.exec()")
+    with open("APP_DEBUG.txt", "w") as f:
+        f.write("Starting event loop\n")
+    try:
+        ret = app.exec()
+        with open("APP_DEBUG.txt", "a") as f:
+            f.write(f"Event loop exited with code: {ret}\n")
+        sys.exit(ret)
+    except SystemExit as e:
+        with open("APP_DEBUG.txt", "a") as f:
+            f.write(f"SystemExit caught: {e}\n")
+        sys.exit(e.code)
 
 
 if __name__ == '__main__':

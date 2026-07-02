@@ -1,6 +1,7 @@
-# core/log_viewer.py
-# This module defines the LogViewerDialog class, which provides a user interface for viewing and managing application logs. 
-# Log Viewer - Dialog to view and manage application logs
+# ==================================================================
+# File: core/log_viewer.py
+# Description: Log Viewer Dialog for Markdown Converter Application
+# ==================================================================
 
 from PyQt6.QtWidgets import QDialog, QMessageBox
 from PyQt6.uic import loadUi
