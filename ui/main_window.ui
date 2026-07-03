@@ -35,7 +35,7 @@
       <item>
        <widget class="QCheckBox" name="checkBox_2">
         <property name="text">
-         <string>MD File to Office</string>
+         <string>Convert to PDF/Office</string>
         </property>
        </widget>
       </item>
@@ -644,7 +644,7 @@ Word/Excel/PDF</string>
         <item>
          <widget class="QGroupBox" name="officeToMdGroup">
           <property name="title">
-           <string>🔄 Office to Markdown Conversion</string>
+           <string>🔄 Convert to Markdown</string>
           </property>
           <layout class="QVBoxLayout" name="officeToMdLayout">
            <item>
@@ -769,6 +769,28 @@ Word/Excel/PDF</string>
     </item>
    </layout>
   </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>900</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuSettings">
+    <property name="title">
+     <string>Settings</string>
+    </property>
+    <addaction name="actionAIFeatures"/>
+   </widget>
+   <addaction name="menuSettings"/>
+  </widget>
+  <action name="actionAIFeatures">
+   <property name="text">
+    <string>AI Features</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>

@@ -181,6 +181,10 @@ class MainWindow(QMainWindow):
         self.toggle_word_settings()
         
         self.fileListWidget.itemSelectionChanged.connect(self.handle_list_selection)
+        
+        if hasattr(self, 'actionAIFeatures'):
+            self.actionAIFeatures.triggered.connect(self.show_ai_settings)
+            
         self.logger.info("Application started")
         
     def on_margin_changed(self, text: str):
@@ -320,7 +324,7 @@ class MainWindow(QMainWindow):
         is_reverse = hasattr(self, 'checkBox_2') and self.checkBox_2.isChecked()
         
         if is_reverse:
-            filter_str = "Office Files (*.docx *.xlsx);;Word Files (*.docx);;Excel Files (*.xlsx);;All Files (*)"
+            filter_str = "Supported Files (*.pdf *.pptx *.docx *.xlsx *.html *.csv *.json *.xml *.jpg *.jpeg *.png *.mp3 *.wav);;All Files (*)"
         else:
             filter_str = "Supported Files (*.md *.markdown *.mermaid *.mmd);;Markdown Files (*.md *.markdown);;Mermaid Files (*.mermaid *.mmd);;All Files (*)"
             
@@ -503,11 +507,11 @@ class MainWindow(QMainWindow):
     def toggle_conversion_direction(self, checked: bool):
         """Toggle UI state for MD to Office vs Office to MD"""
         if checked:
-            self.checkBox_2.setText("Office to MD File")
+            self.checkBox_2.setText("Convert to MD File")
             if hasattr(self, 'stackedWidget'):
                 self.stackedWidget.setCurrentIndex(2) # Page 3
         else:
-            self.checkBox_2.setText("MD File to Office")
+            self.checkBox_2.setText("Convert to PDF/Office")
             if hasattr(self, 'stackedWidget'):
                 if self.current_file_type == 'mermaid':
                     self.stackedWidget.setCurrentIndex(1)
@@ -524,14 +528,14 @@ class MainWindow(QMainWindow):
         self.selectFileBtn.setEnabled(True)
 
     def convert_office_to_md(self):
-        """Convert selected Word/Excel files to Markdown"""
+        """Convert selected files to Markdown"""
         if not self.current_files:
             QMessageBox.warning(self, "Warning", "Please select files first!")
             return
             
-        self.conversion_queue = [f for f in self.current_files if f.endswith(('.docx', '.xlsx'))]
+        self.conversion_queue = [f for f in self.current_files if not f.endswith(('.md', '.markdown', '.mermaid', '.mmd'))]
         if not self.conversion_queue:
-            QMessageBox.warning(self, "Warning", "No valid Office files selected for conversion.")
+            QMessageBox.warning(self, "Warning", "No valid files selected for conversion.")
             return
 
         self.set_ui_enabled(False)
@@ -555,25 +559,16 @@ class MainWindow(QMainWindow):
         input_path = Path(file_to_convert)
         output_file = str(input_path.with_suffix('.md'))
         
-        conv_type = "DocxToMd" if file_to_convert.endswith('.docx') else "XlsxToMd"
-        
         self.statusLabel.setText(f"Converting: {os.path.basename(file_to_convert)}...")
         
-        # We use dummy settings for Word styling as they don't apply to reverse conversion
-        self.worker = ConversionWorker(
+        from logic.markitdown_converter import MarkItDownConverterThread
+        openai_key = self.settings.value("openai_api_key", "")
+        
+        self.worker = MarkItDownConverterThread(
             file_to_convert,
             output_file,
-            conv_type,
-            use_highlighting=False,
-            paper_size="A4",
-            orientation="Portrait",
-            margin="Normal",
-            custom_margins=None,
-            excel_sheet_mode=""
+            openai_key
         )
-        # Store whether we want to extract images for Word docs
-        extract_images = hasattr(self, 'extractImagesCheck') and self.extractImagesCheck.isChecked()
-        self.worker.extract_images = extract_images
         
         self.worker.progress.connect(self.update_progress)
         self.worker.status.connect(self.update_status)
@@ -669,6 +664,15 @@ class MainWindow(QMainWindow):
                 self.logger.info("Logs cleared by user")
             else:
                 QMessageBox.warning(self, "Error", "Failed to clear logs")
+
+    def show_ai_settings(self):
+        """Show AI Settings dialog"""
+        from PyQt6.QtWidgets import QInputDialog
+        current_key = self.settings.value("openai_api_key", "")
+        text, ok = QInputDialog.getText(self, "AI Features Settings", "Enter OpenAI API Key (for OCR/Vision):", text=current_key)
+        if ok:
+            self.settings.setValue("openai_api_key", text)
+            self.logger.info("OpenAI API Key updated")
 
     def show_correct_section(self):
         """Show appropriate section based on file type"""
