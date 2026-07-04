@@ -41,12 +41,13 @@ class ConversionWorker(QThread):
     status = pyqtSignal(str)
     finished = pyqtSignal(bool, str)
     
-    def __init__(self, input_file: str, output_file: str, conversion_type: str, use_highlighting: bool = True, paper_size: str = "A4", orientation: str = "Portrait", margin: str = "Normal", custom_margins: dict = None, excel_sheet_mode: str = "📊 One table per sheet"):
+    def __init__(self, input_file: str, output_file: str, conversion_type: str, use_highlighting: bool = True, paper_size: str = "A4", orientation: str = "Portrait", margin: str = "Normal", custom_margins: dict = None, excel_sheet_mode: str = "📊 One table per sheet", use_native_engine: bool = False):
         super().__init__()
         self.input_file = input_file
         self.output_file = output_file
         self.conversion_type = conversion_type
         self.use_highlighting = use_highlighting
+        self.use_native_engine = use_native_engine
         self.paper_size = paper_size
         self.orientation = orientation
         self.margin = margin

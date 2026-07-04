@@ -87,6 +87,9 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'highlightCheck'):
             self.highlightCheck.setChecked(str(self.settings.value("highlight", "true")).lower() == "true")
             
+        if hasattr(self, 'nativeEngineCheck'):
+            self.nativeEngineCheck.setChecked(str(self.settings.value("native_engine", "false")).lower() == "true")
+            
         saved_format = self.settings.value("format", "Word")
         if saved_format == "Word" and hasattr(self, 'wordRadio'):
             self.wordRadio.setChecked(True)
@@ -457,6 +460,7 @@ class MainWindow(QMainWindow):
         input_path = Path(file_to_convert)
         output_file = str(input_path.with_suffix(output_ext))
         use_highlighting = self.highlightCheck.isChecked()
+        use_native_engine = self.nativeEngineCheck.isChecked() if hasattr(self, 'nativeEngineCheck') else False
         paper_size = self.paperSizeCombo.currentText() if hasattr(self, 'paperSizeCombo') else "A4"
         orientation = self.orientationCombo.currentText() if hasattr(self, 'orientationCombo') else "Portrait"
         margin = self.marginCombo.currentText() if hasattr(self, 'marginCombo') else "Normal"
@@ -482,7 +486,8 @@ class MainWindow(QMainWindow):
             orientation,
             margin,
             custom_margins,
-            excel_sheet_mode=excel_sheet_mode
+            excel_sheet_mode=excel_sheet_mode,
+            use_native_engine=use_native_engine
         )
         self.worker.progress.connect(self.update_progress)
         self.worker.status.connect(self.update_status)
@@ -563,11 +568,13 @@ class MainWindow(QMainWindow):
         
         from logic.markitdown_converter import MarkItDownConverterThread
         openai_key = self.settings.value("openai_api_key", "")
+        use_native_engine = self.nativeEngineCheck.isChecked() if hasattr(self, 'nativeEngineCheck') else False
         
         self.worker = MarkItDownConverterThread(
             file_to_convert,
             output_file,
-            openai_key
+            openai_key,
+            use_native_engine
         )
         
         self.worker.progress.connect(self.update_progress)
@@ -598,6 +605,8 @@ class MainWindow(QMainWindow):
             self.paperLabel.setEnabled(word_settings_enabled)
             self.orientationLabel.setEnabled(word_settings_enabled)
             self.marginLabel.setEnabled(word_settings_enabled)
+            if hasattr(self, 'nativeEngineCheck'):
+                self.nativeEngineCheck.setEnabled(word_settings_enabled)
             
         self.convertBtn.setEnabled(enabled and self.current_file is not None)
         if hasattr(self, 'reverseConvertBtn'):
@@ -612,6 +621,9 @@ class MainWindow(QMainWindow):
         format_selected = self.wordRadio.isChecked() or (hasattr(self, 'pdfMarkdownRadio') and self.pdfMarkdownRadio.isChecked())
         self.highlightCheck.setEnabled(format_selected)
         self.highlightCheck.setVisible(format_selected)
+        if hasattr(self, 'nativeEngineCheck'):
+            self.nativeEngineCheck.setEnabled(format_selected)
+            self.nativeEngineCheck.setVisible(format_selected)
         
         if hasattr(self, 'excelSheetModeCombo'):
             excel_selected = hasattr(self, 'excelRadio') and self.excelRadio.isChecked()
@@ -801,6 +813,8 @@ class MainWindow(QMainWindow):
                 self.settings.setValue("orientation", self.orientationCombo.currentText())
             if hasattr(self, 'highlightCheck'):
                 self.settings.setValue("highlight", self.highlightCheck.isChecked())
+            if hasattr(self, 'nativeEngineCheck'):
+                self.settings.setValue("native_engine", self.nativeEngineCheck.isChecked())
                 
             if hasattr(self, 'excelSheetModeCombo'):
                 self.settings.setValue("excel_sheet_mode", self.excelSheetModeCombo.currentText())

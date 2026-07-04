@@ -277,6 +277,13 @@ as input file (Click to open)</string>
               </widget>
              </item>
              <item>
+              <widget class="QCheckBox" name="nativeEngineCheck">
+               <property name="text">
+                <string>Use Native Python Engine (No Pandoc)</string>
+               </property>
+              </widget>
+             </item>
+             <item>
               <widget class="QComboBox" name="excelSheetModeCombo">
                <item>
                 <property name="text">
