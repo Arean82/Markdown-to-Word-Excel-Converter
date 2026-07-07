@@ -12,8 +12,8 @@ import time
 def kill_running_app():
     """Kill any running instances of the app to free file locks."""
     if os.name == 'nt':
-        print("Ensuring no existing MD Converter.exe is running...")
-        subprocess.run(["taskkill", "/F", "/IM", "MD Converter.exe", "/T"], 
+        print("Ensuring no existing Synora Document Studio.exe is running...")
+        subprocess.run(["taskkill", "/F", "/IM", "Synora Document Studio.exe", "/T"], 
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         time.sleep(1)
 
