@@ -1,4 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
+# Updated: Ensured assets bundle supports the updated README viewer SVGs
 import pypandoc
 import os
 from PyInstaller.utils.hooks import collect_data_files

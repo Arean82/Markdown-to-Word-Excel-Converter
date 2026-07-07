@@ -17,6 +17,7 @@ A professional PyQt6 desktop application designed to bridge the gap between Mark
   - **Smart Architecture**: Automatically handles 100+ tables by splitting them into organized Sheets/Tabs without relying on `pandas`.
 - 👁️ **Interactive Preview Navigation** – Dedicated preview dialog allowing you to seamlessly flip through multiple files (◀ / ▶) in Raw, HTML Rendered, or Table Structure view.
 - 🔗 **Intelligent Fallback** – If no formal tables are detected, it uses `pytablewriter` to automatically extract lists and key-value pairs.
+- 📥 **Drag & Drop** – Instantly drag and drop any supported file (Markdown, Mermaid, Word, Excel) directly into the app; it automatically routes to the correct conversion mode!
 - 🌓 **Adaptive UI** – Support for System-aware Dark and Light modes (Auto), alongside dozens of beautiful `qt-material` themes.
 - 🧵 **Asynchronous Processing** – Entire batch runs on worker threads to keep the UI perfectly smooth.
 
@@ -73,8 +74,8 @@ If you want to package the application into a standalone executable (no Python i
 python main.py
 ```
 
-2. Click "Select Files" to grab one or more Markdown (`.md`) or Mermaid (`.mermaid`, `.mmd`) files.
-   *(Note: You cannot mix Markdown and Mermaid files in the same batch. Please select only one file type at a time.)*
+2. **Select Files**: You can either click "Select Files" or **drag and drop** files directly onto the application window. The app supports all valid file types (`.md`, `.mermaid`, `.docx`, `.xlsx`, etc.) and will automatically switch to the correct UI mode based on what you drop!
+   *(Note: You cannot mix Markdown/Mermaid files with Office files in the same batch. Please select or drag only one conversion type at a time.)*
 3. Your selected files will neatly populate the **Selected Files** list.
 4. The application features a dynamic interface that automatically adapts to your file selection:
 

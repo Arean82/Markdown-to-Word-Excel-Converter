@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import QDialog
 from PyQt6.uic import loadUi
 from pathlib import Path
 import markdown
+import sys
 
 
 class ReadmeViewerDialog(QDialog):
@@ -27,7 +28,14 @@ class ReadmeViewerDialog(QDialog):
     
     def load_readme(self):
         """Load and render README file"""
-        base_dir = Path(__file__).parent.parent
+        if hasattr(sys, '_MEIPASS'):
+            base_dir = Path(sys._MEIPASS)
+        else:
+            base_dir = Path(__file__).parent.parent
+            
+        # Tell the text browser where to look for local assets (like SVG badges)
+        self.textBrowser.setSearchPaths([str(base_dir)])
+        
         possible_names = ["README.md", "README", "Readme.md", "readme.md"]
         
         content = "README file not found."
@@ -38,6 +46,10 @@ class ReadmeViewerDialog(QDialog):
                 try:
                     with open(path, "r", encoding="utf-8") as f:
                         md_content = f.read()
+                    
+                    # FAIL-SAFE: Force absolute local file paths for assets so Qt cannot fail to resolve them
+                    safe_asset_path = base_dir.as_posix() + "/assets/"
+                    md_content = md_content.replace('](assets/', f']({safe_asset_path}')
                     
                     # Fix markdown tables without preceding blank lines
                     lines = md_content.split('\n')

@@ -39,6 +39,7 @@ class MainWindow(QMainWindow):
         # Set UI Size
         self.resize(560, 600)
         self.setMinimumSize(660, 600)
+        self.setAcceptDrops(True)
         
         # Initialize logger
         self.logger = Logger()
@@ -838,4 +839,81 @@ class MainWindow(QMainWindow):
             self.logger.error(f"Error during shutdown: {str(e)}")
             
         event.accept()
-    
+
+    def dragEnterEvent(self, event):
+        """Accept file drag events"""
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+            
+    def dropEvent(self, event):
+        """Handle dropped files with auto-routing"""
+        urls = event.mimeData().urls()
+        if not urls:
+            return
+            
+        file_paths = []
+        for url in urls:
+            if url.isLocalFile():
+                path = url.toLocalFile()
+                if os.path.isfile(path):
+                    file_paths.append(path)
+                    
+        if not file_paths:
+            return
+            
+        # Detect extensions
+        has_forward = False
+        has_reverse = False
+        
+        forward_exts = {'.md', '.markdown', '.mermaid', '.mmd'}
+        
+        for fp in file_paths:
+            ext = Path(fp).suffix.lower()
+            if ext in forward_exts:
+                has_forward = True
+            else:
+                has_reverse = True
+                
+        if has_forward and has_reverse:
+            QMessageBox.warning(self, "Invalid Selection", "You cannot mix Markdown/Mermaid files with Office/Data files in the same batch. Please select only one type of conversion.")
+            return
+            
+        # Auto-route UI mode
+        if has_reverse:
+            if hasattr(self, 'checkBox_2'):
+                self.checkBox_2.setChecked(True)
+        else:
+            if hasattr(self, 'checkBox_2'):
+                self.checkBox_2.setChecked(False)
+                
+        # Handle mermaid vs markdown mix logic exactly like select_file
+        if not has_reverse:
+            has_md = False
+            has_mermaid = False
+            for fp in file_paths:
+                ext = Path(fp).suffix.lower()
+                if ext in {'.md', '.markdown'}:
+                    has_md = True
+                elif ext in {'.mermaid', '.mmd'}:
+                    has_mermaid = True
+                    
+            if has_md and has_mermaid:
+                QMessageBox.warning(self, "Invalid Selection", "You cannot mix Markdown and Mermaid files in the same batch. Please select only one file type.")
+                return
+                
+        # Populate UI
+        self.last_path = str(Path(file_paths[0]).parent)
+        self.current_files = file_paths
+        self.fileListWidget.clear()
+        for fp in self.current_files:
+            self.fileListWidget.addItem(os.path.basename(fp))
+            
+        self.fileListWidget.setCurrentRow(0)
+        self.convertBtn.setEnabled(True)
+        if hasattr(self, 'openOutputFolderBtn'):
+            self.openOutputFolderBtn.setEnabled(True)
+        
+        self.logger.info(f"Dropped {len(self.current_files)} files.")
+        self.show_correct_section()

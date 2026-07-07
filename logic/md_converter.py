@@ -265,42 +265,26 @@ class ConversionWorker(QThread):
                         section.left_margin = Inches(1)
                         section.right_margin = Inches(1)
                         
-                # Fix tables being cut off: Auto resize and word wrap
+                # Fix tables being cut off: Force 100% width and let Word handle columns
                 from docx.enum.table import WD_TABLE_ALIGNMENT
                 from docx.oxml.shared import OxmlElement
                 from docx.oxml.ns import qn
                 
                 for table in doc.tables:
                     table.alignment = WD_TABLE_ALIGNMENT.CENTER
-                    table.autofit = False
-                    table.allow_autofit = False
+                    table.autofit = True
+                    table.allow_autofit = True
                     
-                    # Explicitly calculate column widths so it never cuts off
-                    page_width = section.page_width - section.left_margin - section.right_margin
-                    if table.columns and len(table.columns) > 0:
-                        col_width = int(page_width / len(table.columns))
-                        
-                        tblGrid = table._tbl.find(qn('w:tblGrid'))
-                        if tblGrid is not None:
-                            for gridCol in tblGrid.findall(qn('w:gridCol')):
-                                gridCol.set(qn('w:w'), str(col_width))
-                        
-                        from docx.shared import Pt
-                        for row in table.rows:
-                            for cell in row.cells:
-                                cell.width = col_width
-                                tcPr = cell._tc.get_or_add_tcPr()
-                                tcW = tcPr.find(qn('w:tcW'))
-                                if tcW is not None:
-                                    tcW.set(qn('w:type'), 'dxa')
-                                    tcW.set(qn('w:w'), str(col_width))
-                                    
-                                # Reduce font size of all text in the cell to fit better
-                                for paragraph in cell.paragraphs:
-                                    for run in paragraph.runs:
-                                        current_size_pt = run.font.size.pt if run.font.size else 11.0
-                                        new_size_pt = min(9.0, current_size_pt - 2.0)
-                                        run.font.size = Pt(new_size_pt)
+                    # Set table width to exactly 100% of the page margin
+                    tblPr = table._tbl.tblPr
+                    if tblPr is not None:
+                        tblW = tblPr.find(qn('w:tblW'))
+                        if tblW is None:
+                            tblW = OxmlElement('w:tblW')
+                            tblPr.append(tblW)
+                        tblW.set(qn('w:type'), 'pct')
+                        tblW.set(qn('w:w'), '5000')  # 5000 fiftieths of a percent = 100%
+
 
                 # Remove empty paragraphs at the beginning of the document
                 while doc.paragraphs and not doc.paragraphs[0].text.strip():

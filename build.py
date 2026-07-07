@@ -51,6 +51,7 @@ def main():
         print("Invalid choice. Exiting.")
         return
 
+    print("\n[Notice] Building with updated asset path resolution for README SVG badges...")
     print("\n1. Cleaning previous builds...")
     kill_running_app()
     clean_directory('build')
