@@ -1,7 +1,7 @@
 
 # Markdown to Word/Excel Converter
 
-![Python](assets/badge_python.svg)  ![PyQt6](assets/badge_pyqt6.svg)  ![Platform](assets/badge_platform.svg)  ![License](assets/badge_license.svg)
+![Python](assets/badge_python.svg)  ![PyQt6](assets/badge_pyqt6.svg)  ![Platform Windows](assets/badge_platform.svg)  ![Platform Linux](assets/badge_linux.svg)  ![License](assets/badge_license.svg)
 
 A professional PyQt6 desktop application designed to bridge the gap between Markdown documentation and office formats. It uses a high-fidelity "Combo" engine to preserve complex table structures that standard converters miss.
 
