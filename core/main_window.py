@@ -9,8 +9,8 @@ import os
 from pathlib import Path
 
 from PyQt6.QtWidgets import (QMainWindow, QFileDialog, QMessageBox, 
-                             QPushButton, QProgressBar, QLabel)
-from PyQt6.QtGui import QAction
+                             QPushButton, QProgressBar, QLabel, QMenu)
+from PyQt6.QtGui import QAction, QShortcut, QKeySequence
 from PyQt6.uic import loadUi
 from PyQt6.QtCore import Qt, QSettings
 
@@ -220,8 +220,16 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'checkBox'): self.checkBox.setEnabled(custom_enabled)
 
     def _finish_init(self):
-        # Extracted out from the previous indentation error
-        pass
+        self.delete_shortcut = QShortcut(QKeySequence("Delete"), self.fileListWidget)
+        self.delete_shortcut.activated.connect(self.remove_selected_files)
+        self.backspace_shortcut = QShortcut(QKeySequence("Backspace"), self.fileListWidget)
+        self.backspace_shortcut.activated.connect(self.remove_selected_files)
+        
+        self.fileListWidget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.fileListWidget.customContextMenuRequested.connect(self.show_list_context_menu)
+        
+        if hasattr(self, 'btnDeleteSelected'):
+            self.btnDeleteSelected.clicked.connect(self.remove_selected_files)
     
     def setup_menu(self):
         """Create menu bar programmatically"""
@@ -371,6 +379,39 @@ class MainWindow(QMainWindow):
         self.logger.info(f"Selected {len(self.current_files)} files.")
         self.show_correct_section()
         
+    def remove_selected_files(self):
+        selected_items = self.fileListWidget.selectedItems()
+        if not selected_items: return
+        
+        rows = [self.fileListWidget.row(item) for item in selected_items]
+        rows.sort(reverse=True)
+        
+        for row in rows:
+            if row < len(self.input_files):
+                self.input_files.pop(row)
+            self.fileListWidget.takeItem(row)
+            
+        if self.fileListWidget.count() > 0:
+            if not self.fileListWidget.selectedItems():
+                self.fileListWidget.setCurrentRow(0)
+        else:
+            self.previewWidget.setHtml("")
+            self.fileTypeLabel.setText("File type: Not selected")
+
+    def show_list_context_menu(self, pos):
+        menu = QMenu(self)
+        remove_action = menu.addAction("Remove Selected")
+        clear_action = menu.addAction("Clear All")
+        
+        action = menu.exec(self.fileListWidget.mapToGlobal(pos))
+        if action == remove_action:
+            self.remove_selected_files()
+        elif action == clear_action:
+            self.input_files.clear()
+            self.fileListWidget.clear()
+            self.previewWidget.setHtml("")
+            self.fileTypeLabel.setText("File type: Not selected")
+
     def handle_list_selection(self):
         """Handle selection change in the list widget"""
         selected_items = self.fileListWidget.selectedItems()

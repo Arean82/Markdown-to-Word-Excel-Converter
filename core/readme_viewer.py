@@ -47,9 +47,22 @@ class ReadmeViewerDialog(QDialog):
                     with open(path, "r", encoding="utf-8") as f:
                         md_content = f.read()
                     
-                    # FAIL-SAFE: Force absolute local file paths for assets so Qt cannot fail to resolve them
-                    safe_asset_path = base_dir.as_posix() + "/assets/"
-                    md_content = md_content.replace('](assets/', f']({safe_asset_path}')
+                    # FAIL-SAFE: Encode SVGs to Base64 to bypass PyQt6 QTextBrowser caching bugs
+                    import base64
+                    import re
+                    
+                    def replace_svg_with_base64(match):
+                        img_path = base_dir / match.group(1)
+                        if img_path.exists():
+                            try:
+                                with open(img_path, "rb") as svg_file:
+                                    b64_data = base64.b64encode(svg_file.read()).decode('utf-8')
+                                return f'](data:image/svg+xml;base64,{b64_data})'
+                            except Exception:
+                                pass
+                        return match.group(0)
+                        
+                    md_content = re.sub(r'\]\((assets/[^)]+\.svg)\)', replace_svg_with_base64, md_content)
                     
                     # Fix markdown tables without preceding blank lines
                     lines = md_content.split('\n')

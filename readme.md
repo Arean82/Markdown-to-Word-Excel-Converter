@@ -1,5 +1,5 @@
 
-# Markdown to Word/Excel Converter
+# Synora Document Studio
 
 ![Python](assets/badge_python.svg)  ![PyQt6](assets/badge_pyqt6.svg)  ![Platform Windows](assets/badge_platform.svg)  ![Platform Linux](assets/badge_linux.svg)  ![License](assets/badge_license.svg)
 

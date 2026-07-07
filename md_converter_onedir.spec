@@ -51,7 +51,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='MD Converter',
+    name='Synora Document Studio',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

@@ -53,7 +53,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='MD Converter',
+    name='Synora Document Studio',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
