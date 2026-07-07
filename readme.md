@@ -1,4 +1,3 @@
-
 # Synora Document Studio
 
 ![Python](assets/badge_python.svg)  ![PyQt6](assets/badge_pyqt6.svg)  ![Platform Windows](assets/badge_platform.svg)  ![Platform Linux](assets/badge_linux.svg)  ![License](assets/badge_license.svg)
@@ -11,7 +10,7 @@ A professional PyQt6 desktop application designed to bridge the gap between Mark
 - 🔄 **Reverse Conversion (Office to Markdown)** – Convert Word (.docx) and Excel (.xlsx) files back to standard Markdown while preserving tables, headings, and formatting.
 - 📄 **Word Conversion** – Full document flow using pypandoc_binary, enhanced with `python-docx` for customizable page formatting (Size, Orientation, Margins).
 - 📑 **PDF Conversion** – Generates beautiful, styled PDFs instantly using WeasyPrint, preserving your selected page formatting and gracefully breaking complex tables across pages.
-- 📊 **Powerhouse Excel Engine** – 
+- 📊 **Powerhouse Excel Engine** –
   - **Merged Cell Support**: Full rowspan and colspan mapping.
   - **Rich Formatting**: Preserves bold, italic, and text alignment.
   - **Smart Architecture**: Automatically handles 100+ tables by splitting them into organized Sheets/Tabs without relying on `pandas`.
@@ -34,12 +33,12 @@ Unlike "lightweight" converters, this app uses a multi-stage pipeline to ensure 
 ## 🛠 Installation
 
 ### Prerequisites
+
 - Python 3.8 or higher
 
 ### Steps
 
 1. Clone or download this repository.
-
 2. Install the verified "Combo Stack" dependencies:
 
 ```bash
@@ -54,15 +53,18 @@ If you want to package the application into a standalone executable (no Python i
 
 1. Ensure you have PyInstaller installed (`pip install pyinstaller`).
 2. **Option 1: One Directory (Faster Startup)**
+
    ```bash
    pyinstaller md_converter_onedir.spec
    ```
-   This generates a folder at `dist/md_converter_onedir/` containing the `MD Converter.exe` executable and all required dependencies.
 
+   This generates a folder at `dist/md_converter_onedir/` containing the `MD Converter.exe` executable and all required dependencies.
 3. **Option 2: One File (More Portable)**
+
    ```bash
    pyinstaller md_converter_onefile.spec
    ```
+
    This generates a single executable located at `dist/md_converter_onefile/MD Converter.exe`. *(Note: single-file executables take slightly longer to launch because they extract contents to a temporary folder).*
 
 *(Note: Windows users running either executable still need to install the GTK3 runtime for PDF conversion to work.)*
@@ -70,6 +72,7 @@ If you want to package the application into a standalone executable (no Python i
 ## Usage
 
 1. Run the application:
+
 ```bash
 python main.py
 ```
@@ -80,6 +83,7 @@ python main.py
 4. The application features a dynamic interface that automatically adapts to your file selection:
 
    **If you selected Markdown Files:**
+
    - Choose your conversion type:
      - **Word (.docx)** - Converts entire document with page formatting
      - **Excel (.xlsx)** - Extracts tables with formatting
@@ -89,17 +93,20 @@ python main.py
    - Click "Convert" – the app will automatically batch-process every file in your list!
 
    **If you selected Mermaid Files:**
+
    - The UI will automatically switch to the **Mermaid Export** panel.
    - Select your desired output format (**PNG, SVG, or PDF**).
    - Click "Export Diagram" to render and save your visual flowchart or diagram.
 
    **If you selected to convert Office to Markdown:**
+
    - Check the **Office to MD File** checkbox.
    - Select your Word (`.docx`) or Excel (`.xlsx`) files.
    - *(Word only)* You can choose to extract embedded images which will be saved into an `images/` folder next to your new Markdown file.
    - Click "Convert to Markdown" to generate your `.md` files.
 
 ### Interactive Preview
+
 - Highlight any file in your list and click "👁️ Preview Selected"
 - A dedicated Preview Window opens showing the Raw, HTML, and extracted Tables.
 - Use the **◀ Previous File** and **Next File ▶** buttons at the bottom of the dialog to instantly flip through previews of all your selected files without closing the window.
@@ -114,7 +121,7 @@ When converting to Excel, the application:
 - ✅ Handles **text alignment** (left/center/right)
 - ✅ Supports **merged cells** (rowspan/colspan)
 - ✅ Auto-adjusts column widths using openpyxl.utils.get_column_letter
-- ✅ **Three Excel Sheet Modes**: 
+- ✅ **Three Excel Sheet Modes**:
   - **One table per sheet**: Keeps each table in its own separate sheet.
   - **All tables in one sheet**: Combines all tables sequentially into a single sheet, placing headings as bold line items above them.
   - **Group by section (---)**: Groups elements separated by `---` (horizontal rules) into dedicated sheets. It intelligently extracts Markdown headings (e.g., `### TC-001`) to automatically name the Excel sheet tab, places the heading text as a bold line item inside the sheet for context, and stacks the tables neatly below it separated by 3 blank lines.
@@ -165,22 +172,27 @@ md_converter/
 ## Troubleshooting
 
 ### Word conversion fails
+
 ```bash
 pip install pypandoc_binary
 ```
 
 ### Excel formatting not preserved
+
 The Combo Engine uses multiple methods:
+
 1. pandas + openpyxl with custom formatting and merged cell support
 2. pytablewriter for structured data fallback
 3. Regex-based extraction for lists and key-value pairs
 
 ### "No tables found" error
+
 - Ensure markdown contains properly formatted tables using `|` syntax
 - Check for HTML tables with `<table>` tags
 - The fallback will try to extract lists and key-value pairs automatically
 
 ### Multiple sheets issue
+
 - The app automatically removes the default "Sheet" if multiple sheets exist
 - Sheet names are truncated to 31 characters (Excel limit)
 
@@ -190,4 +202,4 @@ Distributed under the MIT License. See LICENSE for more information.
 
 ## Author
 
-Arean Narrayan
+Arean Narrayan (SynoraStudio Systems)
