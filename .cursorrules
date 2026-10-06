@@ -1,0 +1,5 @@
+# Workspace Rules for Antigravity AI Coding Assistant
+
+1. **No Speculation**: Never assume user requirements, skip elements, or change architectures without explicit verification.
+2. **Obey Instructions Exactly**: Align all implementations, changes, and tasks strictly with the user's instructions.
+3. **No Unauthorized Code/Commands**: Never modify layout files, write code, or execute shell commands without explicit permission and authorization from the user.

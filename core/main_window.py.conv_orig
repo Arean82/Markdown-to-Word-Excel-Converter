@@ -1,17 +1,15 @@
 # ==================================================================
 # File: core/main_window.py
-# Description: Combined MainWindow logic handling both full-featured
-#              document conversion suite (Word, Excel, PDF, Reverse)
-#              and advanced Markdown Reader functions (Bookmarks, Recents).
+# Description: Main application window for Markdown Converter Application   
 # ==================================================================
+
 
 import sys
 import os
 from pathlib import Path
 
 from PyQt6.QtWidgets import (QMainWindow, QFileDialog, QMessageBox, 
-                             QPushButton, QProgressBar, QLabel, QMenu, 
-                             QListWidgetItem, QApplication)
+                             QPushButton, QProgressBar, QLabel, QMenu)
 from PyQt6.QtGui import QAction, QShortcut, QKeySequence
 from PyQt6.uic import loadUi
 from PyQt6.QtCore import Qt, QSettings
@@ -30,7 +28,7 @@ from logic.md_converter import ConversionWorker
 
 
 class MainWindow(QMainWindow):
-    """Main application window incorporating both Converter and Reader features"""
+    """Main application window"""
     
     def __init__(self):
         super().__init__()
@@ -40,8 +38,8 @@ class MainWindow(QMainWindow):
         loadUi(str(ui_path), self)
         
         # Set UI Size
-        self.resize(1050, 750)
-        self.setMinimumSize(700, 600)
+        self.resize(560, 600)
+        self.setMinimumSize(660, 600)
         self.setAcceptDrops(True)
         
         # Initialize logger
@@ -52,18 +50,12 @@ class MainWindow(QMainWindow):
         self.current_file = None
         self.current_file_type = None
         self.worker = None
-        self.reader_windows = []  # Keep references to prevent GC
         
         # Setup QSettings for config.ini
         ini_path = Path(__file__).parent.parent / 'config.ini'
         self.settings = QSettings(str(ini_path), QSettings.Format.IniFormat)
         self.last_path = self.settings.value("last_path", str(Path.home()))
         self.current_theme = self.settings.value("theme", "auto")
-        
-        # Reader settings (bookmarks, recents, fonts)
-        self.reader_settings = QSettings("MarkdownStudio", "ReaderSettings")
-        self.bookmarks = []
-        self.recents = []
         
         # Load saved margin settings
         if hasattr(self, 'doubleSpinBox'):
@@ -101,21 +93,12 @@ class MainWindow(QMainWindow):
             self.nativeEngineCheck.setChecked(str(self.settings.value("native_engine", "false")).lower() == "true")
             
         saved_format = self.settings.value("format", "Word")
-        from PyQt6.QtWidgets import QRadioButton
-        self.slidesRadio = QRadioButton("Slides (.html)", self)
-        if hasattr(self, 'conversionLayout'):
-            self.conversionLayout.addWidget(self.slidesRadio)
-            
         if saved_format == "Word" and hasattr(self, 'wordRadio'):
             self.wordRadio.setChecked(True)
         elif saved_format == "Excel" and hasattr(self, 'excelRadio'):
             self.excelRadio.setChecked(True)
         elif saved_format == "PDF" and hasattr(self, 'pdfMarkdownRadio'):
             self.pdfMarkdownRadio.setChecked(True)
-        elif saved_format == "Slides":
-            self.slidesRadio.setChecked(True)
-            
-        self.slidesRadio.toggled.connect(self.toggle_word_settings)
             
         if hasattr(self, 'excelSheetModeCombo'):
             saved_excel_mode = self.settings.value("excel_sheet_mode", "📊 One table per sheet")
@@ -175,13 +158,11 @@ class MainWindow(QMainWindow):
         # Apply theme
         self.apply_theme(self.current_theme)
         
-        # Connect UI signals for files browser
+        # Connect UI signals
         self.selectFileBtn.clicked.connect(self.select_file)
         self.previewBtn.clicked.connect(self.show_preview_dialog)
-        self.readBtn.clicked.connect(self.open_selected_reader)
         self.convertBtn.clicked.connect(self.convert_file)
         self.exportDiagramBtn.clicked.connect(self.export_diagram)
-        
         if hasattr(self, 'openOutputFolderBtn'):
             self.openOutputFolderBtn.clicked.connect(self.open_output_folder)
             self.openOutputFolderBtn.setEnabled(False)
@@ -204,83 +185,13 @@ class MainWindow(QMainWindow):
         # Initial state for Word settings
         self.toggle_word_settings()
         
-        # Connect double clicks on all three lists
-        self.fileListWidget.itemDoubleClicked.connect(self.open_selected_reader)
-        self.bookmarksListWidget.itemDoubleClicked.connect(self.open_selected_reader)
-        self.recentsListWidget.itemDoubleClicked.connect(self.open_selected_reader)
-        
-        # Connect selection changes for all lists
         self.fileListWidget.itemSelectionChanged.connect(self.handle_list_selection)
-        self.bookmarksListWidget.itemSelectionChanged.connect(self.handle_list_selection)
-        self.recentsListWidget.itemSelectionChanged.connect(self.handle_list_selection)
-        
-        # Tab selection changed resets other selections
-        self.tabWidget.currentChanged.connect(self.on_tab_changed)
         
         if hasattr(self, 'actionAIFeatures'):
             self.actionAIFeatures.triggered.connect(self.show_ai_settings)
             
-        # Initialize delete shortcuts
-        self._finish_init()
-        
-        # Setup global shortcuts for Paste Import (Ctrl+Shift+V)
-        self.paste_shortcut = QShortcut(QKeySequence("Ctrl+Shift+V"), self)
-        self.paste_shortcut.activated.connect(self.paste_markdown_and_read)
-        
-        # Load bookmarks and recents lists
-        self.load_bookmarks_and_recents()
-        
         self.logger.info("Application started")
-
-    def load_bookmarks_and_recents(self):
-        # Bookmarks
-        self.bookmarks = self.reader_settings.value("bookmarks", [])
-        if not isinstance(self.bookmarks, list):
-            self.bookmarks = []
-        self.bookmarks = [f for f in self.bookmarks if os.path.exists(f)]
         
-        self.bookmarksListWidget.clear()
-        for f in self.bookmarks:
-            item = QListWidgetItem(os.path.basename(f))
-            item.setData(Qt.ItemDataRole.UserRole, f)
-            item.setToolTip(f)
-            self.bookmarksListWidget.addItem(item)
-            
-        # Recents
-        self.recents = self.reader_settings.value("recents", [])
-        if not isinstance(self.recents, list):
-            self.recents = []
-        self.recents = [f for f in self.recents if os.path.exists(f)]
-        
-        self.recentsListWidget.clear()
-        for f in self.recents:
-            item = QListWidgetItem(os.path.basename(f))
-            item.setData(Qt.ItemDataRole.UserRole, f)
-            item.setToolTip(f)
-            self.recentsListWidget.addItem(item)
-
-    def on_tab_changed(self, index):
-        if index != 0:
-            self.fileListWidget.clearSelection()
-            self.fileListWidget.setCurrentRow(-1)
-        if index != 1:
-            self.bookmarksListWidget.clearSelection()
-            self.bookmarksListWidget.setCurrentRow(-1)
-        if index != 2:
-            self.recentsListWidget.clearSelection()
-            self.recentsListWidget.setCurrentRow(-1)
-        self.handle_list_selection()
-
-    def get_active_list_widget(self):
-        tab_idx = self.tabWidget.currentIndex()
-        if tab_idx == 0:
-            return self.fileListWidget
-        elif tab_idx == 1:
-            return self.bookmarksListWidget
-        elif tab_idx == 2:
-            return self.recentsListWidget
-        return None
-
     def on_margin_changed(self, text: str):
         if text == "Normal":
             if hasattr(self, 'doubleSpinBox'): self.doubleSpinBox.setValue(2.54)
@@ -301,6 +212,7 @@ class MainWindow(QMainWindow):
             if hasattr(self, 'doubleSpinBox_2'): self.doubleSpinBox_2.setValue(5.08)
             if hasattr(self, 'checkBox'): self.checkBox.setChecked(False)
             
+        # Optional: enable/disable them depending on Custom
         custom_enabled = (text == "Custom")
         if hasattr(self, 'doubleSpinBox'): self.doubleSpinBox.setEnabled(custom_enabled)
         if hasattr(self, 'doubleSpinBox_4'): self.doubleSpinBox_4.setEnabled(custom_enabled)
@@ -321,30 +233,20 @@ class MainWindow(QMainWindow):
             self.btnDeleteSelected.clicked.connect(self.remove_selected_files)
     
     def setup_menu(self):
+        """Create menu bar programmatically"""
         menubar = self.menuBar()
+        
+        # File menu
         file_menu = menubar.addMenu("File")
-        
-        # Add Open URL action
-        self.actionOpenURL = QAction("Open URL...", self)
-        self.actionOpenURL.setShortcut(QKeySequence("Ctrl+U"))
-        self.actionOpenURL.triggered.connect(self.open_url_dialog)
-        file_menu.addAction(self.actionOpenURL)
-        
         file_menu.addAction(self.actionExit)
         
+        # Theme menu
         theme_menu = menubar.addMenu("Theme")
         theme_menu.addAction(self.actionAuto)
         theme_menu.addAction(self.actionDark)
-        
-        # Add Apple Light theme action
-        self.actionAppleLight = QAction("Apple (Light)", self)
-        self.actionAppleLight.setCheckable(True)
-        self.actionAppleLight.setChecked(False)
-        self.actionAppleLight.triggered.connect(lambda: self.apply_theme('apple'))
-        theme_menu.addAction(self.actionAppleLight)
-        
         theme_menu.addAction(self.actionLight)
         
+        # Material sub-menu
         material_menu = theme_menu.addMenu("Material Theme")
         try:
             import qt_material
@@ -352,59 +254,65 @@ class MainWindow(QMainWindow):
                 action = QAction(theme_name, self)
                 action.setCheckable(True)
                 action.setChecked(False)
+                # Capture theme_name in lambda
                 action.triggered.connect(lambda checked, t=theme_name: self.apply_theme(f'material:{t}'))
                 material_menu.addAction(action)
                 self.material_actions.append(action)
         except ImportError:
             material_menu.setEnabled(False)
+            material_menu.setToolTip("Please run 'pip install qt-material' to enable Material themes")
         
+        # Logs menu
         logs_menu = menubar.addMenu("Logs")
         logs_menu.addAction(self.actionViewLogs)
         logs_menu.addAction(self.actionClearLogs)
         
+        # Help menu
         help_menu = menubar.addMenu("Help")
         help_menu.addAction(self.actionLicense)
         help_menu.addAction(self.actionReadme)
     
     def apply_theme(self, theme: str):
+        """Apply theme stylesheet"""
         self.current_theme = theme
+        # Uncheck all
         if hasattr(self, 'actionAuto'):
             self.actionAuto.setChecked(False)
         self.actionDark.setChecked(False)
         self.actionLight.setChecked(False)
-        if hasattr(self, 'actionAppleLight'):
-            self.actionAppleLight.setChecked(False)
         for action in self.material_actions:
             action.setChecked(False)
         
         if theme.startswith('material:'):
             material_theme_name = theme.split(':')[1]
+            # Check the specific action
             for action in self.material_actions:
                 if action.text() == material_theme_name:
                     action.setChecked(True)
                     break
+                    
             try:
                 from qt_material import apply_stylesheet
+                import os
+                # Apply the selected material theme
                 apply_stylesheet(self, theme=material_theme_name)
                 self.logger.info(f"Theme changed to Material: {material_theme_name}")
             except ImportError:
-                self.apply_theme('dark')
+                self.logger.warning("qt-material is not installed")
+                self.apply_theme('dark') # fallback
             return
             
-        # Clear global QApplication stylesheet (set by qt-material on startup) to prevent style bleeding
-        app = QApplication.instance()
-        if app:
-            app.setStyleSheet("")
-            
+        # Reset qt-material styling if switching away from material
         self.setStyleSheet("")
         
         if theme == 'auto':
             if hasattr(self, 'actionAuto'):
                 self.actionAuto.setChecked(True)
             import PyQt6.QtWidgets as QtWidgets
-            app_inst = QtWidgets.QApplication.instance()
-            if app_inst:
-                is_dark = app_inst.palette().window().color().lightness() < 128
+            app = QtWidgets.QApplication.instance()
+            if app:
+                # Use window color lightness to guess system theme
+                is_dark = app.palette().window().color().lightness() < 128
             else:
                 is_dark = False
             theme_path = Path(__file__).parent.parent / 'assets' / 'theme' / ('dark.qss' if is_dark else 'light.qss')
@@ -413,11 +321,6 @@ class MainWindow(QMainWindow):
             theme_path = Path(__file__).parent.parent / 'assets' / 'theme' / 'dark.qss'
             self.actionDark.setChecked(True)
             theme_name = 'dark'
-        elif theme == 'apple':
-            theme_path = Path(__file__).parent.parent / 'assets' / 'theme' / 'apple.qss'
-            if hasattr(self, 'actionAppleLight'):
-                self.actionAppleLight.setChecked(True)
-            theme_name = 'apple'
         else:
             theme_path = Path(__file__).parent.parent / 'assets' / 'theme' / 'light.qss'
             self.actionLight.setChecked(True)
@@ -429,7 +332,10 @@ class MainWindow(QMainWindow):
             self.logger.info(f"Theme changed to {theme} (applied {theme_name})")
     
     def select_file(self):
+        """Open file selection dialog"""
+        
         is_reverse = hasattr(self, 'checkBox_2') and self.checkBox_2.isChecked()
+        
         if is_reverse:
             filter_str = "Supported Files (*.pdf *.pptx *.docx *.xlsx *.html *.csv *.json *.xml *.jpg *.jpeg *.png *.mp3 *.wav);;All Files (*)"
         else:
@@ -445,6 +351,7 @@ class MainWindow(QMainWindow):
         if not file_paths:
             return
             
+        # Validate that the user didn't select a mix of Markdown and Mermaid files
         has_md = False
         has_mermaid = False
         for fp in file_paths:
@@ -459,16 +366,12 @@ class MainWindow(QMainWindow):
             return
             
         self.last_path = str(Path(file_paths[0]).parent)
-        self.current_files = [os.path.abspath(f) for f in file_paths]
-        
+        self.current_files = file_paths
         self.fileListWidget.clear()
         for fp in self.current_files:
-            item = QListWidgetItem(os.path.basename(fp))
-            item.setData(Qt.ItemDataRole.UserRole, fp)
-            item.setToolTip(fp)
-            self.fileListWidget.addItem(item)
+            self.fileListWidget.addItem(os.path.basename(fp))
             
-        self.tabWidget.setCurrentIndex(0)
+        # Select the first file by default
         self.fileListWidget.setCurrentRow(0)
         self.convertBtn.setEnabled(True)
         if hasattr(self, 'openOutputFolderBtn'):
@@ -478,36 +381,23 @@ class MainWindow(QMainWindow):
         self.show_correct_section()
         
     def remove_selected_files(self):
-        active_list = self.get_active_list_widget()
-        if not active_list:
-            return
-            
-        selected_items = active_list.selectedItems()
+        selected_items = self.fileListWidget.selectedItems()
         if not selected_items: return
         
-        rows = [active_list.row(item) for item in selected_items]
+        rows = [self.fileListWidget.row(item) for item in selected_items]
         rows.sort(reverse=True)
         
-        tab_idx = self.tabWidget.currentIndex()
         for row in rows:
-            if tab_idx == 0:
-                if row < len(self.current_files):
-                    self.current_files.pop(row)
-                self.fileListWidget.takeItem(row)
-            elif tab_idx == 1:
-                fp = self.bookmarksListWidget.item(row).data(Qt.ItemDataRole.UserRole)
-                if fp in self.bookmarks:
-                    self.bookmarks.remove(fp)
-                    self.reader_settings.setValue("bookmarks", self.bookmarks)
-                self.bookmarksListWidget.takeItem(row)
-            elif tab_idx == 2:
-                fp = self.recentsListWidget.item(row).data(Qt.ItemDataRole.UserRole)
-                if fp in self.recents:
-                    self.recents.remove(fp)
-                    self.reader_settings.setValue("recents", self.recents)
-                self.recentsListWidget.takeItem(row)
-                
-        self.handle_list_selection()
+            if row < len(self.input_files):
+                self.input_files.pop(row)
+            self.fileListWidget.takeItem(row)
+            
+        if self.fileListWidget.count() > 0:
+            if not self.fileListWidget.selectedItems():
+                self.fileListWidget.setCurrentRow(0)
+        else:
+            self.previewWidget.setHtml("")
+            self.fileTypeLabel.setText("File type: Not selected")
 
     def show_list_context_menu(self, pos):
         menu = QMenu(self)
@@ -518,73 +408,42 @@ class MainWindow(QMainWindow):
         if action == remove_action:
             self.remove_selected_files()
         elif action == clear_action:
-            self.clear_current_tab()
-
-    def clear_current_tab(self):
-        tab_idx = self.tabWidget.currentIndex()
-        if tab_idx == 0:
-            self.current_files.clear()
+            self.input_files.clear()
             self.fileListWidget.clear()
-        elif tab_idx == 1:
-            self.bookmarks.clear()
-            self.reader_settings.setValue("bookmarks", [])
-            self.bookmarksListWidget.clear()
-        elif tab_idx == 2:
-            self.recents.clear()
-            self.reader_settings.setValue("recents", [])
-            self.recentsListWidget.clear()
-        self.handle_list_selection()
+            self.previewWidget.setHtml("")
+            self.fileTypeLabel.setText("File type: Not selected")
 
     def handle_list_selection(self):
-        active_list = self.get_active_list_widget()
-        if not active_list:
-            self.previewBtn.setEnabled(False)
-            self.readBtn.setEnabled(False)
-            self.current_file = None
-            return
-            
-        selected_items = active_list.selectedItems()
+        """Handle selection change in the list widget"""
+        selected_items = self.fileListWidget.selectedItems()
         if not selected_items:
             self.previewBtn.setEnabled(False)
-            self.readBtn.setEnabled(False)
             self.current_file = None
             return
             
-        row = active_list.currentRow()
-        self.current_file = active_list.item(row).data(Qt.ItemDataRole.UserRole)
+        self.previewBtn.setEnabled(True)
+        index = self.fileListWidget.currentRow()
+        self.current_file = self.current_files[index]
         
-        # Check extensions
         if self.current_file.endswith(('.md', '.markdown')):
             self.current_file_type = 'markdown'
-            self.fileTypeLabel.setText("📄 File type: Markdown")
-            self.readBtn.setEnabled(True)
-            self.previewBtn.setEnabled(True)
-        elif self.current_file.endswith(('.mermaid', '.mmd')):
+            self.fileTypeLabel.setText(f"📄 File type: Markdown")
+        elif self.current_file.endswith('.mermaid'):
             self.current_file_type = 'mermaid'
-            self.fileTypeLabel.setText("🎨 File type: Mermaid Diagram")
-            self.readBtn.setEnabled(False)
-            self.previewBtn.setEnabled(True)
+            self.fileTypeLabel.setText(f"🎨 File type: Mermaid Diagram")
         elif self.current_file.endswith('.docx'):
             self.current_file_type = 'word'
-            self.fileTypeLabel.setText("📄 File type: Word Document")
-            self.readBtn.setEnabled(False)
-            self.previewBtn.setEnabled(False)
+            self.fileTypeLabel.setText(f"📄 File type: Word Document")
         elif self.current_file.endswith('.xlsx'):
             self.current_file_type = 'excel'
-            self.fileTypeLabel.setText("📊 File type: Excel Document")
-            self.readBtn.setEnabled(False)
-            self.previewBtn.setEnabled(False)
+            self.fileTypeLabel.setText(f"📊 File type: Excel Document")
         else:
-            self.current_file_type = 'unknown'
-            self.fileTypeLabel.setText("📄 File type: Unknown")
-            self.readBtn.setEnabled(False)
-            self.previewBtn.setEnabled(False)
-            
-        self.show_correct_section()
+            self.fileTypeLabel.setText(f"📄 File type: Unknown")
     
     def show_preview_dialog(self):
-        if not self.current_file:
-            QMessageBox.warning(self, "Warning", "Please select a file first!")
+        """Show full preview dialog"""
+        if not self.current_files:
+            QMessageBox.warning(self, "Warning", "Please select files first!")
             return
             
         is_reverse = hasattr(self, 'checkBox_2') and self.checkBox_2.isChecked()
@@ -592,63 +451,24 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, "Preview", "Previewing Office files is not currently supported.")
             return
             
-        active_list = self.get_active_list_widget()
-        # Find path list for preview navigation dialog
-        paths_list = []
-        for i in range(active_list.count()):
-            paths_list.append(active_list.item(i).data(Qt.ItemDataRole.UserRole))
-            
-        index = active_list.currentRow()
-        if index < 0: index = 0
+        index = self.fileListWidget.currentRow()
+        if index < 0:
+            index = 0
         
         use_highlighting = self.highlightCheck.isChecked()
-        dialog = PreviewDialog(paths_list, index, use_highlighting, self)
+        dialog = PreviewDialog(self.current_files, index, use_highlighting, self)
         dialog.exec()
 
-    def open_selected_reader(self):
-        if not self.current_file or not self.current_file.endswith(('.md', '.markdown')):
-            return
-            
-        if not os.path.exists(self.current_file):
-            QMessageBox.warning(self, "Missing File", f"File does not exist:\n{self.current_file}")
-            return
-            
-        # Add to recents
-        if self.current_file in self.recents:
-            self.recents.remove(self.current_file)
-        self.recents.insert(0, self.current_file)
-        self.recents = self.recents[:15]
-        self.reader_settings.setValue("recents", self.recents)
-        
-        self.load_bookmarks_and_recents()
-        
-        # Determine theme
-        is_dark = False
-        if self.current_theme == 'dark':
-            is_dark = True
-        elif self.current_theme == 'auto':
-            app = QApplication.instance()
-            if app:
-                is_dark = app.palette().window().color().lightness() < 128
-        elif self.current_theme.startswith('material:'):
-            is_dark = 'dark' in self.current_theme.lower()
-            
-        # Open reader
-        reader = MarkdownReaderWindow(self.current_file, is_dark, self)
-        reader.show()
-        self.reader_windows.append(reader)
-        reader.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
-        reader.destroyed.connect(lambda: self.reader_windows.remove(reader) if reader in self.reader_windows else None)
-        reader.bookmark_toggled.connect(self.load_bookmarks_and_recents)
-
     def convert_file(self):
+        """Convert all selected markdown files"""
         if not self.current_files:
             QMessageBox.warning(self, "Warning", "Please select files first!")
             return
             
+        # Build queue of markdown files
         self.conversion_queue = [f for f in self.current_files if f.endswith(('.md', '.markdown'))]
         if not self.conversion_queue:
-            QMessageBox.warning(self, "Warning", "No markdown files selected for conversion.")
+            QMessageBox.warning(self, "Warning", "No markdown files selected for conversion.\nMermaid files are for diagram viewing only.")
             return
 
         self.set_ui_enabled(False)
@@ -661,6 +481,7 @@ class MainWindow(QMainWindow):
 
     def start_next_conversion(self):
         if not self.conversion_queue:
+            # Batch finished
             self.set_ui_enabled(True)
             self.progressBar.setValue(100)
             self.statusLabel.setText("Batch conversion complete")
@@ -675,9 +496,6 @@ class MainWindow(QMainWindow):
         elif hasattr(self, 'pdfMarkdownRadio') and self.pdfMarkdownRadio.isChecked():
             output_ext = ".pdf"
             conv_type = "PDF"
-        elif hasattr(self, 'slidesRadio') and self.slidesRadio.isChecked():
-            output_ext = ".html"
-            conv_type = "Slides"
         else:
             output_ext = ".xlsx"
             conv_type = "Excel"
@@ -735,10 +553,11 @@ class MainWindow(QMainWindow):
             self.start_next_conversion()
             
     def toggle_conversion_direction(self, checked: bool):
+        """Toggle UI state for MD to Office vs Office to MD"""
         if checked:
             self.checkBox_2.setText("Convert to MD File")
             if hasattr(self, 'stackedWidget'):
-                self.stackedWidget.setCurrentIndex(2)
+                self.stackedWidget.setCurrentIndex(2) # Page 3
         else:
             self.checkBox_2.setText("Convert to PDF/Office")
             if hasattr(self, 'stackedWidget'):
@@ -747,6 +566,7 @@ class MainWindow(QMainWindow):
                 else:
                     self.stackedWidget.setCurrentIndex(0)
                     
+        # Clear currently selected files since types no longer match the intent
         self.current_files = []
         self.current_file = None
         self.current_file_type = None
@@ -756,6 +576,7 @@ class MainWindow(QMainWindow):
         self.selectFileBtn.setEnabled(True)
 
     def convert_office_to_md(self):
+        """Convert selected files to Markdown"""
         if not self.current_files:
             QMessageBox.warning(self, "Warning", "Please select files first!")
             return
@@ -782,6 +603,7 @@ class MainWindow(QMainWindow):
             return
             
         file_to_convert = self.conversion_queue.pop(0)
+        
         input_path = Path(file_to_convert)
         output_file = str(input_path.with_suffix('.md'))
         
@@ -797,21 +619,20 @@ class MainWindow(QMainWindow):
             openai_key,
             use_native_engine
         )
+        
         self.worker.progress.connect(self.update_progress)
         self.worker.status.connect(self.update_status)
         self.worker.finished.connect(self.on_batch_conversion_finished)
         self.worker.start()
     
     def set_ui_enabled(self, enabled: bool):
+        """Enable/disable UI elements"""
         self.selectFileBtn.setEnabled(enabled)
         self.previewBtn.setEnabled(enabled and self.current_file is not None)
-        self.readBtn.setEnabled(enabled and self.current_file_type == 'markdown')
         self.wordRadio.setEnabled(enabled)
         self.excelRadio.setEnabled(enabled)
         if hasattr(self, 'pdfMarkdownRadio'):
             self.pdfMarkdownRadio.setEnabled(enabled)
-        if hasattr(self, 'slidesRadio'):
-            self.slidesRadio.setEnabled(enabled)
         
         format_selected = self.wordRadio.isChecked() or (hasattr(self, 'pdfMarkdownRadio') and self.pdfMarkdownRadio.isChecked())
         word_settings_enabled = enabled and format_selected
@@ -839,6 +660,7 @@ class MainWindow(QMainWindow):
             self.openOutputFolderBtn.setEnabled(enabled and self.current_file is not None)
             
     def toggle_word_settings(self, checked: bool = False):
+        """Toggle Word/PDF specific settings vs Excel specific settings"""
         format_selected = self.wordRadio.isChecked() or (hasattr(self, 'pdfMarkdownRadio') and self.pdfMarkdownRadio.isChecked())
         self.highlightCheck.setEnabled(format_selected)
         self.highlightCheck.setVisible(format_selected)
@@ -860,30 +682,37 @@ class MainWindow(QMainWindow):
             self.marginLabel.setEnabled(format_selected)
     
     def update_progress(self, value: int):
+        """Update progress bar"""
         self.progressBar.setValue(value)
     
     def update_status(self, message: str):
+        """Update status label"""
         self.statusLabel.setText(message)
     
     def show_license(self):
+        """Show license dialog"""
         dialog = LicenseViewerDialog(self)
         dialog.exec()
     
     def show_readme(self):
+        """Show README dialog"""
         dialog = ReadmeViewerDialog(self)
         dialog.exec()
     
     def show_logs(self):
+        """Show log viewer dialog"""
         dialog = LogViewerDialog(self)
         dialog.exec()
     
     def clear_logs(self):
+        """Clear logs with confirmation"""
         reply = QMessageBox.question(
             self,
             "Clear Logs",
             "Are you sure you want to clear all logs?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
+        
         if reply == QMessageBox.StandardButton.Yes:
             if self.logger.clear_logs():
                 QMessageBox.information(self, "Success", "Logs cleared")
@@ -892,6 +721,7 @@ class MainWindow(QMainWindow):
                 QMessageBox.warning(self, "Error", "Failed to clear logs")
 
     def show_ai_settings(self):
+        """Show AI Settings dialog"""
         from PyQt6.QtWidgets import QInputDialog
         current_key = self.settings.value("openai_api_key", "")
         text, ok = QInputDialog.getText(self, "AI Features Settings", "Enter OpenAI API Key (for OCR/Vision):", text=current_key)
@@ -900,6 +730,7 @@ class MainWindow(QMainWindow):
             self.logger.info("OpenAI API Key updated")
 
     def show_correct_section(self):
+        """Show appropriate section based on file type"""
         if self.current_file_type == 'markdown':
             if hasattr(self, 'stackedWidget'):
                 self.stackedWidget.setCurrentIndex(0)
@@ -918,6 +749,7 @@ class MainWindow(QMainWindow):
                 self.exportDiagramBtn.setEnabled(True)
 
     def get_export_format(self):
+        """Get selected export format from radio buttons"""
         if self.pngRadio.isChecked():
             return "PNG"
         elif self.svgRadio.isChecked():
@@ -926,30 +758,39 @@ class MainWindow(QMainWindow):
             return "PDF"
         
     def export_diagram(self):
+        """Export mermaid diagram to selected format"""
         if not self.current_file or self.current_file_type != 'mermaid':
             QMessageBox.warning(self, "Warning", "Please select a mermaid file first!")
             return
 
         export_format = self.get_export_format()
+
+        # Get save location
         file_path, _ = QFileDialog.getSaveFileName(
             self,
             "Save Diagram",
             f"diagram.{export_format.lower()}",
             f"{export_format} Files (*.{export_format.lower()});;All Files (*)"
         )
+
         if not file_path:
             return
 
         try:
+            # Load mermaid content
             with open(self.current_file, 'r', encoding='utf-8') as f:
                 code = f.read()
 
+            # Render using mermaid renderer
             from logic.mermaid_renderer import MermaidRenderer, MermaidFormat, MermaidBackend
+
+            # Map format
             format_map = {
                 "PNG": MermaidFormat.PNG,
                 "SVG": MermaidFormat.SVG,
                 "PDF": MermaidFormat.PDF
             }
+
             renderer = MermaidRenderer(backend=MermaidBackend.MERMAID_PY)
             renderer.render(
                 code,
@@ -958,18 +799,23 @@ class MainWindow(QMainWindow):
                 width=1024,
                 theme='light'
             )
+
             QMessageBox.information(self, "Success", f"Diagram exported to:\n{file_path}")
             self.logger.info(f"Diagram exported: {file_path}")
+
         except Exception as e:
             self.logger.error(f"Export failed: {str(e)}")
             QMessageBox.critical(self, "Error", f"Failed to export diagram:\n{str(e)}")
 
     def open_output_folder(self):
+        """Open the folder containing the currently selected file(s)"""
         import platform
         import subprocess
+        
         folder_path = self.last_path
         if not folder_path or not os.path.exists(folder_path):
             return
+            
         try:
             if platform.system() == "Windows":
                 os.startfile(folder_path)
@@ -983,9 +829,13 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Error", f"Failed to open folder:\n{str(e)}")
 
     def closeEvent(self, event):
+        """Clean up background threads before closing."""
         try:
+            # Save settings
             self.settings.setValue("theme", self.current_theme)
             self.settings.setValue("last_path", self.last_path)
+            
+            # Save margin settings
             if hasattr(self, 'marginCombo'):
                 self.settings.setValue("margin_preset", self.marginCombo.currentText())
             if hasattr(self, 'doubleSpinBox'):
@@ -998,6 +848,8 @@ class MainWindow(QMainWindow):
                 self.settings.setValue("margin_right", self.doubleSpinBox_2.value())
             if hasattr(self, 'checkBox'):
                 self.settings.setValue("margin_is_inch", self.checkBox.isChecked())
+                
+            # Save other format settings
             if hasattr(self, 'paperSizeCombo'):
                 self.settings.setValue("paper_size", self.paperSizeCombo.currentText())
             if hasattr(self, 'orientationCombo'):
@@ -1006,65 +858,104 @@ class MainWindow(QMainWindow):
                 self.settings.setValue("highlight", self.highlightCheck.isChecked())
             if hasattr(self, 'nativeEngineCheck'):
                 self.settings.setValue("native_engine", self.nativeEngineCheck.isChecked())
+                
             if hasattr(self, 'excelSheetModeCombo'):
                 self.settings.setValue("excel_sheet_mode", self.excelSheetModeCombo.currentText())
-            if self.wordRadio.isChecked():
+                
+            if hasattr(self, 'wordRadio') and self.wordRadio.isChecked():
                 self.settings.setValue("format", "Word")
             elif hasattr(self, 'excelRadio') and self.excelRadio.isChecked():
                 self.settings.setValue("format", "Excel")
             elif hasattr(self, 'pdfMarkdownRadio') and self.pdfMarkdownRadio.isChecked():
                 self.settings.setValue("format", "PDF")
-            elif hasattr(self, 'slidesRadio') and self.slidesRadio.isChecked():
-                self.settings.setValue("format", "Slides")
+            
+            if self.worker and self.worker.isRunning():
+                self.worker.quit()
+                self.worker.wait(1000)
+            
+            # Close preview dialog if open to kill any threads inside it
+            if hasattr(self, 'preview_dialog') and self.preview_dialog is not None:
+                self.preview_dialog.close()
+                
         except Exception as e:
-            self.logger.error(f"Failed to save settings during close: {str(e)}")
+            self.logger.error(f"Error during shutdown: {str(e)}")
+            
         event.accept()
 
-    def paste_markdown_and_read(self):
-        clipboard = QApplication.clipboard()
-        text = clipboard.text()
-        if not text:
-            self.statusBar.showMessage("Clipboard is empty!", 3000)
+    def dragEnterEvent(self, event):
+        """Accept file drag events"""
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+            
+    def dropEvent(self, event):
+        """Handle dropped files with auto-routing"""
+        urls = event.mimeData().urls()
+        if not urls:
             return
             
-        scratch_dir = Path(r"C:\Users\user\.gemini\antigravity\brain\f1126255-faca-4613-88b9-d7bd8ce7bb1e\scratch")
-        scratch_dir.mkdir(parents=True, exist_ok=True)
-        temp_file = scratch_dir / "pasted_markdown.md"
-        
-        try:
-            with open(temp_file, 'w', encoding='utf-8') as f:
-                f.write(text)
-            
-            self.current_file = str(temp_file)
-            self.current_file_type = 'markdown'
-            self.open_selected_reader()
-            self.statusBar.showMessage("Pasted Markdown rendering...", 3000)
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to save pasted text: {e}")
-
-    def open_url_dialog(self):
-        from PyQt6.QtWidgets import QInputDialog
-        url, ok = QInputDialog.getText(self, "Open URL", "Enter raw Markdown web URL:")
-        if ok and url:
-            self.statusBar.showMessage("Fetching URL...", 3000)
-            import urllib.request
-            try:
-                req = urllib.request.Request(
-                    url, 
-                    headers={'User-Agent': 'Mozilla/5.0'}
-                )
-                with urllib.request.urlopen(req) as response:
-                    content = response.read().decode('utf-8')
-                
-                scratch_dir = Path(r"C:\Users\user\.gemini\antigravity\brain\f1126255-faca-4613-88b9-d7bd8ce7bb1e\scratch")
-                scratch_dir.mkdir(parents=True, exist_ok=True)
-                temp_file = scratch_dir / "url_markdown.md"
-                with open(temp_file, 'w', encoding='utf-8') as f:
-                    f.write(content)
+        file_paths = []
+        for url in urls:
+            if url.isLocalFile():
+                path = url.toLocalFile()
+                if os.path.isfile(path):
+                    file_paths.append(path)
                     
-                self.current_file = str(temp_file)
-                self.current_file_type = 'markdown'
-                self.open_selected_reader()
-                self.statusBar.showMessage(f"Loaded Markdown from URL", 3000)
-            except Exception as e:
-                QMessageBox.critical(self, "URL Error", f"Failed to fetch content from URL:\n{e}")
+        if not file_paths:
+            return
+            
+        # Detect extensions
+        has_forward = False
+        has_reverse = False
+        
+        forward_exts = {'.md', '.markdown', '.mermaid', '.mmd'}
+        
+        for fp in file_paths:
+            ext = Path(fp).suffix.lower()
+            if ext in forward_exts:
+                has_forward = True
+            else:
+                has_reverse = True
+                
+        if has_forward and has_reverse:
+            QMessageBox.warning(self, "Invalid Selection", "You cannot mix Markdown/Mermaid files with Office/Data files in the same batch. Please select only one type of conversion.")
+            return
+            
+        # Auto-route UI mode
+        if has_reverse:
+            if hasattr(self, 'checkBox_2'):
+                self.checkBox_2.setChecked(True)
+        else:
+            if hasattr(self, 'checkBox_2'):
+                self.checkBox_2.setChecked(False)
+                
+        # Handle mermaid vs markdown mix logic exactly like select_file
+        if not has_reverse:
+            has_md = False
+            has_mermaid = False
+            for fp in file_paths:
+                ext = Path(fp).suffix.lower()
+                if ext in {'.md', '.markdown'}:
+                    has_md = True
+                elif ext in {'.mermaid', '.mmd'}:
+                    has_mermaid = True
+                    
+            if has_md and has_mermaid:
+                QMessageBox.warning(self, "Invalid Selection", "You cannot mix Markdown and Mermaid files in the same batch. Please select only one file type.")
+                return
+                
+        # Populate UI
+        self.last_path = str(Path(file_paths[0]).parent)
+        self.current_files = file_paths
+        self.fileListWidget.clear()
+        for fp in self.current_files:
+            self.fileListWidget.addItem(os.path.basename(fp))
+            
+        self.fileListWidget.setCurrentRow(0)
+        self.convertBtn.setEnabled(True)
+        if hasattr(self, 'openOutputFolderBtn'):
+            self.openOutputFolderBtn.setEnabled(True)
+        
+        self.logger.info(f"Dropped {len(self.current_files)} files.")
+        self.show_correct_section()

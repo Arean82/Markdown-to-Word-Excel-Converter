@@ -67,6 +67,8 @@ class ConversionWorker(QThread):
                 self.convert_to_excel()
             elif self.conversion_type == "PDF":
                 self.convert_to_pdf()
+            elif self.conversion_type == "Slides":
+                self.convert_to_slides()
             elif self.conversion_type == "DocxToMd":
                 self.convert_docx_to_md()
             elif self.conversion_type == "XlsxToMd":
@@ -76,6 +78,150 @@ class ConversionWorker(QThread):
                 
         except Exception as e:
             self.logger.error(f"Conversion error: {str(e)}")
+            self.finished.emit(False, str(e))
+            
+    def convert_to_slides(self):
+        """Compiles Markdown into an interactive, self-contained HTML slideshow"""
+        try:
+            self.logger.info(f"Starting Slides conversion: {self.input_file}")
+            self.status.emit("Parsing slide sections...")
+            self.progress.emit(40)
+            
+            with open(self.input_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+                
+            # Split content by standard Markdown horizontal rule page break
+            slides_md = content.split('\n---')
+            slides_html = []
+            
+            import markdown
+            for slide in slides_md:
+                if slide.strip():
+                    html = markdown.markdown(slide, extensions=['tables', 'fenced_code', 'nl2br'])
+                    slides_html.append(f'<div class="slide" style="display: none; padding: 3em; height: 80vh; box-sizing: border-box; overflow-y: auto;">\n{html}\n</div>')
+            
+            slides_divs = "\n".join(slides_html)
+            
+            # Interactive Reveal CSS-inspired slide template
+            template = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Markdown Slideshow</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown.min.css">
+    <style>
+        body {{
+            background-color: #f5f5f7;
+            color: #1d1d1f;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }}
+        .slides-container {{
+            width: 80%;
+            height: 85vh;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }}
+        .slide h1, .slide h2 {{
+            text-align: center;
+            border-bottom: none;
+            color: #1d1d1f;
+        }}
+        .controls {{
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }}
+        .btn {{
+            background: #0071e3;
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }}
+        .btn:hover {{
+            background: #0077ed;
+        }}
+        .slide-num {{
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: #86868b;
+            font-size: 14px;
+        }}
+    </style>
+</head>
+<body class="markdown-body">
+    <div class="slides-container">
+        {slides_divs}
+        <div class="slide-num" id="slideNum">Slide 1 / {len(slides_html)}</div>
+        <div class="controls">
+            <button class="btn" onclick="prevSlide()">◀ Prev</button>
+            <button class="btn" onclick="nextSlide()">Next ▶</button>
+        </div>
+    </div>
+    
+    <script>
+        let currentIdx = 0;
+        const slides = document.querySelectorAll('.slide');
+        
+        function showSlide(idx) {{
+            slides.forEach((slide, i) => {{
+                slide.style.display = (i === idx) ? 'block' : 'none';
+            }});
+            document.getElementById('slideNum').innerText = `Slide ${{idx + 1}} / ${{slides.length}}`;
+        }}
+        
+        function nextSlide() {{
+            if (currentIdx < slides.length - 1) {{
+                currentIdx++;
+                showSlide(currentIdx);
+            }}
+        }}
+        
+        function prevSlide() {{
+            if (currentIdx > 0) {{
+                currentIdx--;
+                showSlide(currentIdx);
+            }}
+        }}
+        
+        // Key navigation
+        document.addEventListener('keydown', (e) => {{
+            if (e.key === 'ArrowRight' || e.key === 'Space') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        }});
+        
+        // Initial load
+        if (slides.length > 0) showSlide(0);
+    </script>
+</body>
+</html>"""
+            
+            with open(self.output_file, 'w', encoding='utf-8') as f:
+                f.write(template)
+                
+            self.progress.emit(100)
+            self.finished.emit(True, f"Successfully created slides HTML: {self.output_file}")
+            
+        except Exception as e:
+            self.logger.error(f"Slides error: {e}")
             self.finished.emit(False, str(e))
     
     def convert_to_pdf(self):

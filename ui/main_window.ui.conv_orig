@@ -176,25 +176,6 @@ as input file (Click to open)</string>
         </property>
        </widget>
       </item>
-      <item>
-       <widget class="QPushButton" name="readBtn">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="styleSheet">
-         <string>font-weight: bold; background-color: #0078d4; color: white;</string>
-        </property>
-        <property name="text">
-         <string>📖 Read Markdown</string>
-        </property>
-       </widget>
-      </item>
      </layout>
     </item>
     <item>
@@ -214,61 +195,27 @@ as input file (Click to open)</string>
       </property>
       <layout class="QVBoxLayout" name="fileListLayout">
        <item>
-        <widget class="QTabWidget" name="tabWidget">
-         <property name="currentIndex">
-          <number>0</number>
+        <widget class="QListWidget" name="fileListWidget">
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+          </font>
          </property>
-         <widget class="QWidget" name="filesTab">
-          <attribute name="title">
-           <string>📂 Files</string>
-          </attribute>
-          <layout class="QVBoxLayout" name="filesLayout">
-           <item>
-            <widget class="QListWidget" name="fileListWidget">
-             <property name="font">
-              <font>
-               <pointsize>10</pointsize>
-              </font>
-             </property>
-             <property name="selectionMode">
-              <enum>QAbstractItemView::SelectionMode::ExtendedSelection</enum>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-         <widget class="QWidget" name="bookmarksTab">
-          <attribute name="title">
-           <string>⭐ Bookmarks</string>
-          </attribute>
-          <layout class="QVBoxLayout" name="bookmarksLayout">
-           <item>
-            <widget class="QListWidget" name="bookmarksListWidget">
-             <property name="font">
-              <font>
-               <pointsize>10</pointsize>
-              </font>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-         <widget class="QWidget" name="recentsTab">
-          <attribute name="title">
-           <string>🕒 Recent Files</string>
-          </attribute>
-          <layout class="QVBoxLayout" name="recentsLayout">
-           <item>
-            <widget class="QListWidget" name="recentsListWidget">
-             <property name="font">
-              <font>
-               <pointsize>10</pointsize>
-              </font>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
+         <property name="mouseTracking">
+          <bool>true</bool>
+         </property>
+         <property name="tabletTracking">
+          <bool>true</bool>
+         </property>
+         <property name="tabKeyNavigation">
+          <bool>true</bool>
+         </property>
+         <property name="selectionMode">
+          <enum>QAbstractItemView::SelectionMode::ExtendedSelection</enum>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
         </widget>
        </item>
       </layout>

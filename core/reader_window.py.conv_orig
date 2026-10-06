@@ -1,0 +1,241 @@
+# ==================================================================
+# File: core/reader_window.py
+# Description: Dedicated Markdown Reader window with WebEngine, KaTeX,
+#              Mermaid rendering, and a Table of Contents sidebar.
+# ==================================================================
+
+import os
+import re
+from pathlib import Path
+from PyQt6.QtWidgets import (QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
+                             QTreeWidget, QTreeWidgetItem, QSplitter, QLabel,
+                             QToolBar, QMessageBox, QStatusBar)
+from PyQt6.QtGui import QAction, QKeySequence
+from PyQt6.QtCore import Qt, QUrl
+from PyQt6.QtWebEngineWidgets import QWebEngineView
+
+import markdown
+from markdown.extensions.codehilite import CodeHiliteExtension
+
+class MarkdownReaderWindow(QMainWindow):
+    """A dedicated Markdown Reader window with a TOC sidebar and WebEngine view"""
+    
+    def __init__(self, file_path: str, is_dark_theme: bool = False, parent=None):
+        super().__init__(parent)
+        self.file_path = file_path
+        self.is_dark_theme = is_dark_theme
+        
+        self.setWindowTitle(f"Markdown Reader - {os.path.basename(file_path)}")
+        self.resize(1000, 700)
+        
+        # Setup UI layout
+        self.setup_ui()
+        self.setup_menu_and_toolbar()
+        
+        # Load and render content
+        self.load_document()
+        
+    def setup_ui(self):
+        # Main widget and layout
+        main_widget = QWidget()
+        self.setCentralWidget(main_widget)
+        layout = QHBoxLayout(main_widget)
+        layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Splitter between TOC and WebEngine
+        self.splitter = QSplitter(Qt.Orientation.Horizontal)
+        layout.addWidget(self.splitter)
+        
+        # Sidebar widget
+        self.sidebar_widget = QWidget()
+        sidebar_layout = QVBoxLayout(self.sidebar_widget)
+        sidebar_layout.setContentsMargins(5, 5, 5, 5)
+        
+        # Sidebar Header
+        sidebar_title = QLabel("Table of Contents")
+        sidebar_title.setStyleSheet("font-weight: bold; font-size: 13px; padding: 5px;")
+        sidebar_layout.addWidget(sidebar_title)
+        
+        # TOC Tree Widget
+        self.toc_tree = QTreeWidget()
+        self.toc_tree.setHeaderHidden(True)
+        self.toc_tree.itemClicked.connect(self.on_toc_item_clicked)
+        sidebar_layout.addWidget(self.toc_tree)
+        
+        self.splitter.addWidget(self.sidebar_widget)
+        
+        # WebEngine view
+        self.web_view = QWebEngineView()
+        self.splitter.addWidget(self.web_view)
+        
+        # Set initial splitter sizes (25% sidebar, 75% viewer)
+        self.splitter.setSizes([250, 750])
+        
+        # Status Bar
+        self.status_bar = QStatusBar()
+        self.setStatusBar(self.status_bar)
+        
+    def setup_menu_and_toolbar(self):
+        toolbar = QToolBar("Reader Toolbar")
+        self.addToolBar(toolbar)
+        
+        # Sidebar toggle action
+        self.toggle_sidebar_action = QAction("📋 Toggle Sidebar", self)
+        self.toggle_sidebar_action.setShortcut(QKeySequence("Ctrl+B"))
+        self.toggle_sidebar_action.triggered.connect(self.toggle_sidebar)
+        toolbar.addAction(self.toggle_sidebar_action)
+        
+        toolbar.addSeparator()
+        
+        # Zoom In action
+        self.zoom_in_action = QAction("🔍➕ Zoom In", self)
+        self.zoom_in_action.setShortcut(QKeySequence("Ctrl+="))
+        self.zoom_in_action.triggered.connect(lambda: self.adjust_zoom(0.1))
+        toolbar.addAction(self.zoom_in_action)
+        
+        # Zoom Out action
+        self.zoom_out_action = QAction("🔍➖ Zoom Out", self)
+        self.zoom_out_action.setShortcut(QKeySequence("Ctrl+-"))
+        self.zoom_out_action.triggered.connect(lambda: self.adjust_zoom(-0.1))
+        toolbar.addAction(self.zoom_out_action)
+        
+        # Reset Zoom action
+        self.zoom_reset_action = QAction("🔍 Reset Zoom", self)
+        self.zoom_reset_action.setShortcut(QKeySequence("Ctrl+0"))
+        self.zoom_reset_action.triggered.connect(lambda: self.web_view.setZoomFactor(1.0))
+        toolbar.addAction(self.zoom_reset_action)
+
+    def toggle_sidebar(self):
+        self.sidebar_widget.setVisible(not self.sidebar_widget.isVisible())
+
+    def adjust_zoom(self, delta: float):
+        current_zoom = self.web_view.zoomFactor()
+        new_zoom = max(0.25, min(5.0, current_zoom + delta))
+        self.web_view.setZoomFactor(new_zoom)
+        self.status_bar.showMessage(f"Zoom level: {int(new_zoom * 100)}%", 2000)
+
+    def load_document(self):
+        try:
+            with open(self.file_path, 'r', encoding='utf-8') as f:
+                raw_markdown = f.read()
+                
+            # Process and build Table of Contents
+            self.build_toc(raw_markdown)
+            
+            # Estimate word count & reading time
+            words = len(re.findall(r'\w+', raw_markdown))
+            reading_time = max(1, round(words / 200)) # Avg reading speed ~200 wpm
+            self.status_bar.showMessage(f"Words: {words} | Approx. Reading Time: {reading_time} min")
+            
+            # Format markdown with Pygments code highlighting
+            extensions = [
+                'tables',
+                'fenced_code',
+                'nl2br',
+                'sane_lists',
+                CodeHiliteExtension(
+                    css_class='highlight',
+                    use_pygments=True,
+                    pygments_style='monokai'
+                )
+            ]
+            
+            # We want to replace standard mermaid codeblocks with a class="mermaid" tag
+            # so mermaid.js can render it in the frontend.
+            processed_md = raw_markdown
+            
+            # Render Markdown to HTML
+            html_body = markdown.markdown(processed_md, extensions=extensions)
+            
+            # Inline replacements for mermaid fenced blocks:
+            # We look for `<pre><code class="language-mermaid">...</code></pre>` and turn it into `<div class="mermaid">...</div>`
+            html_body = re.sub(
+                r'<pre><code class="language-mermaid">(.*?)</code></pre>',
+                lambda m: f'<div class="mermaid">{self.unescape_html(m.group(1))}</div>',
+                html_body,
+                flags=re.DOTALL
+            )
+            
+            # Load the reader template HTML
+            template_path = Path(__file__).parent.parent / 'assets' / 'reader_template.html'
+            if not template_path.exists():
+                raise FileNotFoundError("Reader template file not found.")
+                
+            with open(template_path, 'r', encoding='utf-8') as f:
+                template_html = f.read()
+                
+            # Inject HTML content into the template
+            final_html = template_html.replace('<!-- MARKDOWN_HTML_CONTENT -->', html_body)
+            
+            # Set template theme
+            theme_str = 'dark' if self.is_dark_theme else 'light'
+            final_html = final_html.replace("window.onload = setupHeadingsAndRender;", f"window.onload = function() {{ setupHeadingsAndRender(); setTheme('{theme_str}'); }};")
+            
+            # Load HTML content into WebEngine
+            # Passing baseURL as file path allows relative links and assets to work
+            base_url = QUrl.fromLocalFile(str(template_path.parent))
+            self.web_view.setHtml(final_html, base_url)
+            
+        except Exception as e:
+            QMessageBox.critical(self, "Reader Error", f"Failed to load document:\n{str(e)}")
+            
+    def unescape_html(self, escaped_str: str) -> str:
+        """Helper to convert HTML entities back to raw text for Mermaid diagram parser"""
+        return (escaped_str
+                .replace('&amp;', '&')
+                .replace('&lt;', '<')
+                .replace('&gt;', '>')
+                .replace('&quot;', '"')
+                .replace('&#39;', "'"))
+
+    def build_toc(self, markdown_text: str):
+        self.toc_tree.clear()
+        
+        # Scan lines to find headings
+        lines = markdown_text.split('\n')
+        headings = []
+        in_code_block = False
+        
+        for line in lines:
+            stripped = line.strip()
+            if stripped.startswith('```'):
+                in_code_block = not in_code_block
+                continue
+            if in_code_block:
+                continue
+                
+            match = re.match(r'^(#{1,6})\s+(.+)$', stripped)
+            if match:
+                level = len(match.group(1))
+                title = match.group(2).strip()
+                # Remove inline MD tags from title for clean display
+                clean_title = re.sub(r'\*\*|__|\*|_|`|\[.*?\]\(.*?\)', '', title)
+                headings.append((level, clean_title))
+                
+        # Build hierarchy tree
+        # Keeps track of last item at each level
+        level_map = {0: self.toc_tree.invisibleRootItem()}
+        
+        for idx, (level, title) in enumerate(headings):
+            item = QTreeWidgetItem([title])
+            item.setData(0, Qt.ItemDataRole.UserRole, f"heading_{idx}")
+            
+            # Find closest parent
+            parent_level = level - 1
+            while parent_level not in level_map and parent_level > 0:
+                parent_level -= 1
+                
+            parent_item = level_map[parent_level]
+            parent_item.addChild(item)
+            level_map[level] = item
+            
+            # Auto expand top levels
+            if level <= 2:
+                item.setExpanded(True)
+                
+    def on_toc_item_clicked(self, item: QTreeWidgetItem, column: int):
+        heading_id = item.data(0, Qt.ItemDataRole.UserRole)
+        if heading_id:
+            # Inject javascript to scroll to target element
+            js_code = f"scrollToHeading('{heading_id}');"
+            self.web_view.page().runJavaScript(js_code)

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Markdown Reader</title>
+    <!-- GitHub Markdown CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown.min.css">
+    
+    <!-- KaTeX for LaTeX Math rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMath()"></script>
+    
+    <!-- Mermaid for Diagram rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.2.4/dist/mermaid.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #24292f;
+            --border-color: #d0d7de;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 2rem;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body.dark-mode {
+            --bg-color: #0d1117;
+            --text-color: #c9d1d9;
+            --border-color: #30363d;
+        }
+
+        .markdown-body {
+            box-sizing: border-box;
+            min-width: 200px;
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 45px;
+            background-color: transparent !important;
+        }
+
+        @media (max-width: 767px) {
+            .markdown-body {
+                padding: 15px;
+            }
+        }
+
+        /* Ensure math blocks are centered and overflow beautifully */
+        .katex-display {
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 0.5em 0;
+        }
+
+        /* Mermaid diagram styling */
+        .mermaid {
+            background-color: transparent;
+            display: flex;
+            justify-content: center;
+            margin: 1.5em 0;
+        }
+
+        /* Fullscreen Image Lightbox Modal */
+        #lightboxModal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        #lightboxImage {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 8px;
+            transition: transform 0.25s ease;
+        }
+    </style>
+</head>
+<body class="markdown-body">
+    <div id="content">
+        <!-- MARKDOWN_HTML_CONTENT -->
+    </div>
+
+    <!-- Lightbox Modal container -->
+    <div id="lightboxModal" onclick="closeLightbox()">
+        <img id="lightboxImage" src="" alt="Zoomed view">
+    </div>
+
+    <script>
+        // Setup KaTeX rendering
+        function renderMath() {
+            if (typeof renderMathInElement !== 'undefined') {
+                renderMathInElement(document.body, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false},
+                        {left: '\\(', right: '\\)', display: false},
+                        {left: '\\[', right: '\\[', display: true}
+                    ],
+                    throwOnError: false
+                });
+            }
+        }
+
+        // Initialize Mermaid
+        function initMermaid(theme) {
+            try {
+                if (typeof mermaid !== 'undefined') {
+                    mermaid.initialize({
+                        startOnLoad: false,
+                        theme: theme === 'dark' ? 'dark' : 'default',
+                        securityLevel: 'loose'
+                    });
+                    mermaid.run();
+                } else {
+                    console.error("Mermaid library is not loaded.");
+                }
+            } catch (e) {
+                console.error("Failed to initialize Mermaid: ", e);
+            }
+        }
+
+        // Jump/Scroll to heading ID
+        function scrollToHeading(id) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        // Apply dark mode styling class
+        function setTheme(theme) {
+            if (theme === 'dark') {
+                document.body.classList.add('dark-mode');
+                document.body.setAttribute('data-color-mode', 'dark');
+                initMermaid('dark');
+            } else {
+                document.body.classList.remove('dark-mode');
+                document.body.setAttribute('data-color-mode', 'light');
+                initMermaid('default');
+            }
+            renderMath();
+        }
+
+        // Custom Font API
+        function setFontFamily(fontName) {
+            document.body.style.fontFamily = fontName;
+        }
+
+        // Custom Font Size API
+        function setFontSize(size) {
+            document.body.style.fontSize = size;
+        }
+
+        // Set IDs for headings and wire up image lightbox triggers
+        let images = [];
+        let activeImageIndex = -1;
+
+        function openLightbox(index) {
+            activeImageIndex = index;
+            const modal = document.getElementById('lightboxModal');
+            const img = document.getElementById('lightboxImage');
+            img.src = images[index].src;
+            modal.style.display = 'flex';
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightboxModal').style.display = 'none';
+        }
+
+        function navigateLightbox(direction) {
+            if (document.getElementById('lightboxModal').style.display === 'flex' && images.length > 0) {
+                activeImageIndex = (activeImageIndex + direction + images.length) % images.length;
+                document.getElementById('lightboxImage').src = images[activeImageIndex].src;
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowRight') navigateLightbox(1);
+            if (e.key === 'ArrowLeft') navigateLightbox(-1);
+        });
+
+        function setupHeadingsAndRender() {
+            const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+            headings.forEach((heading, idx) => {
+                if (!heading.id) {
+                    heading.id = 'heading_' + idx;
+                }
+            });
+
+            // Set up lightbox for all markdown-rendered images
+            images = Array.from(document.querySelectorAll('#content img'));
+            images.forEach((img, idx) => {
+                img.style.cursor = 'zoom-in';
+                img.onclick = (e) => {
+                    e.stopPropagation();
+                    openLightbox(idx);
+                };
+            });
+
+            renderMath();
+        }
+
+        window.onload = setupHeadingsAndRender;
+    </script>
+</body>
+</html>
